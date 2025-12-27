@@ -9,6 +9,10 @@
 
 We introduce a novel approach to improve Vietnamese Visual Question Answering (VQA) and Natural Language Explanations (NLE) using **Group Relative Policy Optimization (GRPO)**. 
 
+<p align="center">
+  <img src="assets/main_figure.jpg" width="100%" alt="Main Figure">
+</p>
+
 By decoupling **reasoning (thinking)** from **explanation**, we achieve state-of-the-art performance on the ViVQA-X benchmark, enabling models to provide accurate answers with high-quality, interpretable rationales.
 
 ## 🔑 Key Features
@@ -284,12 +288,7 @@ python -m src.evaluation.calculate_scores \
 If you use this code or our methodology, please cite:
 
 ```bibtex
-@inproceedings{icisn2026_grpo_vqa_nle,
-  title={Enhancing Vietnamese VQA-NLE via Learning to Explain with GRPO},
-  author={Quang-Minh Tran and Phat-Dat To and others},
-  booktitle={ICISN 2026},
-  year={2026}
-}
+
 ```
 
 ## 📧 Contact
