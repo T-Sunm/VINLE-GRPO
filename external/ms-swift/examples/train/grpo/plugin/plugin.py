@@ -19,11 +19,18 @@ from swift.plugin.multi_turn import MultiTurnScheduler, multi_turns
 from swift.plugin.rm_plugin import DefaultRMPlugin
 from swift.utils import get_logger
 
+# Old reward imports (keep for backward compatibility)
 from explaination_rewards import ExplanationRewardScorer 
 from outcome_rewards import AccuracyRewardScorer as custom_accuracy_reward
 from outcome_rewards import CaptionRewardScorer
 from length_rewards import length_penalty_answer, length_penalty_explanation
 from reasoning_rewards import ReasoningRewardScorer
+
+# Add VINLE-GRPO src to path for reward functions
+import sys
+vinle_src_path = '/home/vlai-vqa-nle/minhtq/VINLE-GRPO/src'
+if vinle_src_path not in sys.path:
+    sys.path.insert(0, vinle_src_path)
 
 logger = get_logger()
 """
@@ -97,296 +104,6 @@ class CountdownORM(ORM):
 
 orms['external_countdown'] = CountdownORM
 
-class CustomFormatReward_ViVQA_X_Only_Think_Answer(ORM):
-    def __call__(self, completions: List[str], **kwargs) -> List[float]:
-        REQUIRED_TAGS = ["CONCLUSION", "REASONING"]
-        num_tags = len(REQUIRED_TAGS)
-        
-        BASE_WEIGHT = 1.0 / num_tags if num_tags > 0 else 0.0
-        PENALTY_FACTOR = (BASE_WEIGHT / num_tags * 2) if num_tags > 0 else 0.0
-        
-        scores = []
-
-        for content in completions:
-            # Xử lý trường hợp rỗng
-            if not content or not content.strip():
-                scores.append(0.0)
-                continue
-            
-            b_total = 0.0  # Tổng điểm thưởng
-            p_total = 0.0  # Tổng điểm phạt
-
-            for tag in REQUIRED_TAGS:
-                # Đếm số thẻ
-                n_open = len(re.findall(fr"<{tag}>", content))
-                n_close = len(re.findall(fr"</{tag}>", content))
-                n_pair = len(re.findall(fr"<{tag}>.*?</{tag}>", content, re.DOTALL))
-
-                # Tính điểm thưởng
-                if n_pair >= 1:
-                    b_tag = BASE_WEIGHT  # Full điểm
-                elif n_open > 0 or n_close > 0:
-                    b_tag = BASE_WEIGHT * 0.5  # Nửa điểm
-                else:
-                    b_tag = 0.0
-                
-                b_total += b_tag
-
-                # Tính điểm phạt
-                excess_count = max(0, n_open + n_close - 2)
-                p_total += excess_count * PENALTY_FACTOR
-
-            # Tổng kết và chuẩn hóa
-            total = max(0.0, min(1.0, b_total - p_total))
-            scores.append(total)
-
-        return scores
-    
-orms['custom_format_reward_ViVQA_X_Only_Think_Answer'] = CustomFormatReward_ViVQA_X_Only_Think_Answer
-
-
-class CustomFormatReward_ViVQA_X_Only_Explain_Answer(ORM):
-    def __call__(self, completions: List[str], **kwargs) -> List[float]:
-        REQUIRED_TAGS = ["CONCLUSION", "EXPLANATION"]
-        num_tags = len(REQUIRED_TAGS)
-        
-        BASE_WEIGHT = 1.0 / num_tags if num_tags > 0 else 0.0
-        PENALTY_FACTOR = (BASE_WEIGHT / num_tags * 2) if num_tags > 0 else 0.0
-        
-        scores = []
-
-        for content in completions:
-            # Xử lý trường hợp rỗng
-            if not content or not content.strip():
-                scores.append(0.0)
-                continue
-            
-            b_total = 0.0  # Tổng điểm thưởng
-            p_total = 0.0  # Tổng điểm phạt
-
-            for tag in REQUIRED_TAGS:
-                # Đếm số thẻ
-                n_open = len(re.findall(fr"<{tag}>", content))
-                n_close = len(re.findall(fr"</{tag}>", content))
-                n_pair = len(re.findall(fr"<{tag}>.*?</{tag}>", content, re.DOTALL))
-
-                # Tính điểm thưởng
-                if n_pair >= 1:
-                    b_tag = BASE_WEIGHT  # Full điểm
-                elif n_open > 0 or n_close > 0:
-                    b_tag = BASE_WEIGHT * 0.5  # Nửa điểm
-                else:
-                    b_tag = 0.0
-                
-                b_total += b_tag
-
-                # Tính điểm phạt
-                excess_count = max(0, n_open + n_close - 2)
-                p_total += excess_count * PENALTY_FACTOR
-
-            # Tổng kết và chuẩn hóa
-            total = max(0.0, min(1.0, b_total - p_total))
-            scores.append(total)
-
-        return scores
-
-    
-orms['custom_format_reward_ViVQA_X_Only_Explain_Answer'] = CustomFormatReward_ViVQA_X_Only_Explain_Answer
-
-class CustomFormatReward_ViVQA_X(ORM):
-    def __call__(self, completions: List[str], **kwargs) -> List[float]:
-
-        completion_contents = completions
-
-        # Regex cho từng cặp thẻ
-        pat_think = re.compile(r"<REASONING>.*?</REASONING>", re.DOTALL)
-        pat_answer = re.compile(r"<answer>.*?</answer>", re.DOTALL)
-        pat_explain = re.compile(r"<explain>.*?</explain>", re.DOTALL)
-        
-        scores = []
-        for content in completion_contents:
-            if len(content) == 0 or not content.strip():
-                    scores.append(-1.0)
-                    continue
-            n_pair_think = len(pat_think.findall(content))
-            n_pair_answer = len(pat_answer.findall(content))
-            n_pair_explain = len(pat_explain.findall(content))
-
-            n_think_open   = len(re.findall(r"<REASONING>", content))
-            n_think_close  = len(re.findall(r"</REASONING>", content))
-            n_answer_open  = len(re.findall(r"<answer>", content))
-            n_answer_close = len(re.findall(r"</answer>", content))
-            n_explain_open  = len(re.findall(r"<explain>", content))
-            n_explain_close = len(re.findall(r"</explain>", content))
-            # base score
-            b_think = 0.2 if n_pair_think >= 1 else (0.1 if n_think_open or n_think_close == 1 else 0.0)
-            b_answer = 0.4 if n_pair_answer >= 1 else (0.2 if n_answer_open or n_answer_close == 1 else 0.0)
-            b_explain = 0.4 if n_pair_explain >= 1 else (0.2 if n_explain_open or n_explain_close == 1 else 0.0)
-            b_total = b_think + b_answer + b_explain
-            
-            # penalty score
-            # Đếm số thẻ mở/đóng riêng lẻ
-            # Thẻ đơn dư = (mở + đóng) - 2 (không âm)
-            think_singles   = max(0, n_think_open   + n_think_close   - 2 )
-            answer_singles  = max(0, n_answer_open  + n_answer_close  - 2 )
-            explain_singles = max(0, n_explain_open + n_explain_close - 2 )
-
-            p_think = think_singles * (1/6)
-            p_answer = answer_singles * (1/6)
-            p_explain = explain_singles * (1/6)
-            p_total = p_think + p_answer + p_explain
-
-            total = float(b_total - p_total)
-            scores.append(total)
-
-        # if os.getenv("DEBUG_MODE") == "true":
-        #     log_path = os.getenv("LOG_PATH")
-        #     current_time = datetime.now().strftime("%d-%H-%M-%S-%f")
-        #     with open(log_path.replace(".txt", "_format.txt"), "a", encoding='utf-8') as f:
-        #         f.write(f"------------- {current_time} Format reward -------------\n")
-        #         for content, score in zip(completion_contents, scores):
-        #             f.write(f"Content: {content}\n")
-        #             f.write(f"Score: {score:.2f}\n")
-        return scores
-
-class CustomFormatReward_VER3(ORM):
-    def __call__(self, completions: List[str], **kwargs) -> List[float]:
-        REQUIRED_TAGS = ["REASONING", "CONCLUSION", "EXPLANATION"]
-        num_tags = len(REQUIRED_TAGS)
-        
-        BASE_WEIGHT = 1.0 / num_tags if num_tags > 0 else 0.0
-        PENALTY_FACTOR = (BASE_WEIGHT / num_tags * 2) if num_tags > 0 else 0.0
-        
-        scores = []
-
-        for content in completions:
-            # Xử lý trường hợp rỗng
-            if not content or not content.strip():
-                scores.append(0.0)
-                continue
-            
-            b_total = 0.0  # Tổng điểm thưởng
-            p_total = 0.0  # Tổng điểm phạt
-
-            for tag in REQUIRED_TAGS:
-                # Đếm số thẻ
-                n_open = len(re.findall(fr"<{tag}>", content))
-                n_close = len(re.findall(fr"</{tag}>", content))
-                n_pair = len(re.findall(fr"<{tag}>.*?</{tag}>", content, re.DOTALL))
-
-                # Tính điểm thưởng
-                if n_pair >= 1:
-                    b_tag = BASE_WEIGHT  # Full điểm
-                elif n_open > 0 or n_close > 0:
-                    b_tag = BASE_WEIGHT * 0.5  # Nửa điểm
-                else:
-                    b_tag = 0.0
-                
-                b_total += b_tag
-
-                # Tính điểm phạt
-                excess_count = max(0, n_open + n_close - 2)
-                p_total += excess_count * PENALTY_FACTOR
-
-            # Tổng kết và chuẩn hóa
-            total = max(0.0, min(1.0, b_total - p_total))
-            scores.append(total)
-
-        return scores
-
-class CustomFormatReward_ViVQA_X_Stage2(ORM):
-    def __call__(self, completions: List[str], **kwargs) -> List[float]:
-
-        completion_contents = completions
-
-        # Regex cho từng cặp thẻ
-        pat_think = re.compile(r"<REASONING>.*?</REASONING>", re.DOTALL)
-        pat_answer = re.compile(r"<answer>.*?</answer>", re.DOTALL)
-        pat_explain = re.compile(r"<explain>.*?</explain>", re.DOTALL)
-        
-        scores = []
-        for content in completion_contents:
-            if len(content) == 0 or not content.strip():
-                scores.append(-1.0)
-                continue
-                
-            n_pair_think = len(pat_think.findall(content))
-            n_pair_answer = len(pat_answer.findall(content))
-            n_pair_explain = len(pat_explain.findall(content))
-
-            n_think_open   = len(re.findall(r"<REASONING>", content))
-            n_think_close  = len(re.findall(r"</REASONING>", content))
-            n_answer_open  = len(re.findall(r"<answer>", content))
-            n_answer_close = len(re.findall(r"</answer>", content))
-            n_explain_open  = len(re.findall(r"<explain>", content))
-            n_explain_close = len(re.findall(r"</explain>", content))
-            
-            # Base score - chỉ cộng điểm khi có cặp hoàn chỉnh
-            b_think = 0.2 if n_pair_think >= 1 else 0.0
-            b_answer = 0.4 if n_pair_answer >= 1 else 0.0
-            b_explain = 0.4 if n_pair_explain >= 1 else 0.0
-            b_total = b_think + b_answer + b_explain
-            
-            # Penalty score - trừ điểm cho TOÀN BỘ thẻ đơn lẻ (kể cả thẻ đầu tiên)
-            think_singles   = n_think_open + n_think_close - 2 * n_pair_think
-            answer_singles  = n_answer_open + n_answer_close - 2 * n_pair_answer
-            explain_singles = n_explain_open + n_explain_close - 2 * n_pair_explain
-
-            p_think = think_singles * 0.1
-            p_answer = answer_singles * 0.2
-            p_explain = explain_singles * 0.2
-            p_total = p_think + p_answer + p_explain
-
-            total = float(b_total - p_total)
-            scores.append(total)
-
-        return scores
-
-class CustomFormatReward_Caption(ORM):
-    def __call__(self, completions: List[str], **kwargs) -> List[float]:
-        
-        completion_contents = completions
-        
-        # Regex cho từng cặp thẻ
-        pat_think = re.compile(r"<REASONING>.*?</REASONING>", re.DOTALL)
-        pat_caption = re.compile(r"<caption>.*?</caption>", re.DOTALL)
-        
-        scores = []
-        for content in completion_contents:
-            if len(content) == 0 or not content.strip():
-                scores.append(-1.0)
-                continue
-            n_pair_think = len(pat_think.findall(content))
-            n_pair_caption = len(pat_caption.findall(content))
-
-            n_think_open   = len(re.findall(r"<REASONING>", content))
-            n_think_close  = len(re.findall(r"</REASONING>", content))
-            n_caption_open  = len(re.findall(r"<caption>", content))
-            n_caption_close = len(re.findall(r"</caption>", content))
-            # base score
-            b_think = 0.5 if n_pair_think >= 1 else (0.25 if n_think_open or n_think_close == 1 else 0.0)
-            b_caption = 0.5 if n_pair_caption >= 1 else (0.25 if n_caption_open or n_caption_close == 1 else 0.0)
-            b_total = b_think + b_caption
-            
-            # penalty score
-            # Đếm số thẻ mở/đóng riêng lẻ
-            # Thẻ đơn dư = (mở + đóng) - 2 (không âm)
-            think_singles   = max(0, n_think_open   + n_think_close   - 2 )
-            caption_singles = max(0, n_caption_open  + n_caption_close  - 2 )
-
-            p_think = think_singles * (1/5)
-            p_caption = caption_singles * (1/5)
-            p_total = p_think + p_caption
-
-            total = float(b_total - p_total)
-            scores.append(total)
-
-        return scores
-
-orms['custom_format_reward_ViVQA_X'] = CustomFormatReward_ViVQA_X
-orms['custom_format_reward_ViVQA_X_Stage2'] = CustomFormatReward_ViVQA_X_Stage2
-orms['custom_format_reward_Caption'] = CustomFormatReward_Caption
-orms['custom_format_reward_ver3'] = CustomFormatReward_VER3
 
 tokenizer = None
 def initialize_tokenizer(model_path):
@@ -460,221 +177,7 @@ class CustomReasoningReward(ORM):
 # Register reward function
 orms['custom_reasoning_reward'] = CustomReasoningReward
 
-NUM_GENERATIONS = int(os.getenv("NUM_GENERATIONS", 4))
-class CustomExplainationReward(ORM):
-    """Reward scorer for EXPLANATION content using ExplanationRewardScorer."""
-    
-    @staticmethod
-    def _extract_tag_content(text: str, tag: str) -> str:
-        """Extract content from XML-style tags."""
-        match = re.search(fr'<{tag}>(.*?)</{tag}>', text, re.DOTALL)
-        return match.group(1).strip() if match else ""
-    
-    def __call__(self, completions: List[str], solution: List[str], **kwargs) -> List[float]:
-        scorer = initialize_explanation_customized_scorer(alpha=0.5)
-        
-        # Extract image paths
-        if 'images' not in kwargs:
-            print("Error: 'images' key not found in kwargs.")
-            return [0.0] * len(completions)
-        
-        batch_image_data = kwargs['images']
-        if len(batch_image_data) != len(completions):
-            print(f"Error: Image data count ({len(batch_image_data)}) != completions count ({len(completions)}).")
-            return [0.0] * len(completions)
-        
-        image_paths = []
-        for img_data_list in batch_image_data:
-            if (isinstance(img_data_list, list) and len(img_data_list) > 0 and
-                isinstance(img_data_list[0], dict) and 'path' in img_data_list[0]):
-                image_paths.append(img_data_list[0]['path'])
-            else:
-                print(f"Warning: Unexpected image format: {img_data_list}")
-                image_paths.append(None)
-        
-        # Extract explanation content
-        gt_explanations = [[self._extract_tag_content(sol, "EXPLANATION")] for sol in solution]
-        pred_explanations = [self._extract_tag_content(comp, "EXPLANATION") for comp in completions]
-        
-        # Validate lengths
-        if not (len(pred_explanations) == len(gt_explanations) == len(image_paths)):
-            print("Error: Length mismatch after processing.")
-            return [0.0] * len(completions)
-        
-        # Calculate rewards
-        try:
-            prompt_ids = [i // NUM_GENERATIONS for i in range(len(completions))]
-            rewards = scorer.explanation_rewards(
-                ground_truths=gt_explanations,
-                predictions=pred_explanations,
-                image_paths=image_paths,
-                prompt_ids=prompt_ids
-            )
-            
-            if len(rewards) != len(completions):
-                print(f"Error: Scorer returned {len(rewards)} rewards, expected {len(completions)}.")
-                return [0.0] * len(completions)
-            
-            return rewards
-            
-        except Exception as e:
-            print(f"Error during reward calculation: {e}")
-            return [0.0] * len(completions)
 
-class CustomExplainationRewardOnlyThinkAnswer(ORM):
-    """Reward scorer for REASONING content using ExplanationRewardScorer."""
-    
-    @staticmethod
-    def _extract_tag_content(text: str, tag: str) -> str:
-        """Extract content from XML-style tags."""
-        match = re.search(fr'<{tag}>(.*?)</{tag}>', text, re.DOTALL)
-        return match.group(1).strip() if match else ""
-    
-    def __call__(self, completions: List[str], solution: List[str], **kwargs) -> List[float]:
-        scorer = initialize_explanation_customized_scorer(alpha=0.5)
-        
-        # Extract image paths
-        if 'images' not in kwargs:
-            print("Error: 'images' key not found in kwargs.")
-            return [0.0] * len(completions)
-        
-        batch_image_data = kwargs['images']
-        if len(batch_image_data) != len(completions):
-            print(f"Error: Image data count ({len(batch_image_data)}) != completions count ({len(completions)}).")
-            return [0.0] * len(completions)
-        
-        image_paths = []
-        for img_data_list in batch_image_data:
-            if (isinstance(img_data_list, list) and len(img_data_list) > 0 and
-                isinstance(img_data_list[0], dict) and 'path' in img_data_list[0]):
-                image_paths.append(img_data_list[0]['path'])
-            else:
-                print(f"Warning: Unexpected image format: {img_data_list}")
-                image_paths.append(None)
-        
-        # Extract reasoning content
-        gt_reasonings = [[self._extract_tag_content(sol, "REASONING")] for sol in solution]
-        pred_reasonings = [self._extract_tag_content(comp, "REASONING") for comp in completions]
-        
-        # Validate lengths
-        if not (len(pred_reasonings) == len(gt_reasonings) == len(image_paths)):
-            print("Error: Length mismatch after processing.")
-            return [0.0] * len(completions)
-        
-        # Calculate rewards
-        try:
-            prompt_ids = [i // NUM_GENERATIONS for i in range(len(completions))]
-            rewards = scorer.explanation_rewards(
-                ground_truths=gt_reasonings,
-                predictions=pred_reasonings,
-                image_paths=image_paths,
-                prompt_ids=prompt_ids
-            )
-            
-            if len(rewards) != len(completions):
-                print(f"Error: Scorer returned {len(rewards)} rewards, expected {len(completions)}.")
-                return [0.0] * len(completions)
-            
-            return rewards
-            
-        except Exception as e:
-            print(f"Error during reward calculation: {e}")
-            return [0.0] * len(completions)
-
-orms['custom_explaination_reward_only_think_answer'] = CustomExplainationRewardOnlyThinkAnswer
-
-
-class CustomExplainationReward_Stage3(ORM):
-    def __call__(self, completions: List[str], solution: List[str], **kwargs) -> List[float]:
-        contents = completions
-        scorer = initialize_explanation_customized_scorer(alpha=0.8)
-
-        ground_truths_list = []
-        predictions_list = []
-        image_paths_list = [] # Initialize list for image paths
-
-        # --- MODIFIED: Extract image paths from list[dict] structure ---
-        if 'images' in kwargs:
-            batch_image_data = kwargs['images'] # This is likely List[List[Dict[str, str]]]
-            if len(batch_image_data) != len(contents):
-                print(f"Error in explanation_reward: Mismatch between image data count ({len(batch_image_data)}) and completions count ({len(contents)}).")
-                return [0.0] * len(contents)
-
-            for img_data_list in batch_image_data:
-                # Expecting img_data_list to be like [{'bytes': None, 'path': '...'}]
-                if isinstance(img_data_list, list) and len(img_data_list) > 0 and \
-                   isinstance(img_data_list[0], dict) and 'path' in img_data_list[0]:
-                    image_paths_list.append(img_data_list[0]['path']) # Extract the path from the dict
-                else:
-                    # Handle unexpected format within the batch element
-                    print(f"Warning: Unexpected image data format found: {img_data_list}. Appending None.")
-                    image_paths_list.append(None) # Use None or "" as a placeholder
-
-        else:
-            print("Error in explanation_reward: 'images' key not found in kwargs.")
-            return [0.0] * len(contents)
-        # --- END MODIFIED ---
-
-        # Extract explanations (same as before)
-        for content, sol in zip(contents, solution):
-            sol_match = re.search(r'<explain>(.*?)</explain>', sol, re.DOTALL)
-            gt_explanation = sol_match.group(1).strip() if sol_match else ""
-            ground_truths_list.append([gt_explanation]) # Ensure scorer expects List[List[str]]
-
-            content_match = re.search(r'<explain>(.*?)</explain>', content, re.DOTALL)
-            pred_explanation = content_match.group(1).strip() if content_match else ""
-            predictions_list.append(pred_explanation)
-
-        # Ensure lists are consistent before scoring
-        if not (len(predictions_list) == len(ground_truths_list) == len(image_paths_list)):
-             print("Error: Length mismatch between predictions, ground truths, and image paths after processing.")
-             return [0.0] * len(contents)
-
-        # Call the scorer
-        try:
-            rewards = scorer.explanation_rewards(
-                ground_truths=ground_truths_list,
-                predictions=predictions_list,
-                image_paths=image_paths_list
-            )
-            if len(rewards) != len(contents):
-                print(f"Error: Scorer returned {len(rewards)} rewards, expected {len(contents)}.")
-                rewards = [0.0] * len(contents)
-
-        except Exception as e:
-            print(f"Error during scorer.explanation_rewards calculation: {e}")
-            rewards = [0.0] * len(contents)
-
-        return rewards
-
-orms['custom_explaination_reward'] = CustomExplainationReward
-orms['custom_explaination_reward_stage3'] = CustomExplainationReward_Stage3
-class CustomAccuracyReward(ORM):
-    def __call__(self, completions, solution, **kwargs):
-        contents = completions
-        try:
-            rewards = initialize_accuracy_customized_scorer().accuracy_rewards_batch(contents, solution)
-        except Exception as e:
-            print(f"Error in customized_accuracy_reward: {e}")
-            rewards = [0.0] * len(contents)
-        
-        # Debug logging
-        # if os.getenv("DEBUG_MODE") == "true":
-        #     log_path = os.getenv("LOG_PATH")
-        #     if log_path:
-        #         current_time = datetime.now().strftime("%d-%H-%M-%S-%f")
-        #         try:
-        #             with open(log_path.replace(".txt", "_accuracy_bertscore.txt"), "a", encoding='utf-8') as f:
-        #                 f.write(f"------------- {current_time} Customized Accuracy reward (BERTScore) -------------\n")
-        #                 for i, (content, sol, reward) in enumerate(zip(contents, solution, rewards)):
-        #                     f.write(f"Sample {i}: Reward={reward:.4f}\n")
-        #                     f.write(f"Content: {content}\n")
-        #                     f.write(f"Solution: {sol}\n")
-        #         except Exception as e:
-        #             print(f"Failed to write debug log: {e}")
-        return rewards
-
-orms['custom_accuracy_reward'] = CustomAccuracyReward
 
 caption_scorer = None  
 
@@ -1810,3 +1313,111 @@ class BasicFormatReward(ORM):
 # Register basic rewards
 orms['basic_accuracy_reward'] = BasicAccuracyReward
 orms['basic_format_reward'] = BasicFormatReward
+
+
+# ============================================================================
+# VINLE-GRPO Rewards (Clean ORM Wrappers)
+# ============================================================================
+
+class VinleFormatReward(ORM):
+    """Format reward for full GRPO: REASONING + CONCLUSION + EXPLANATION"""
+    def __call__(self, completions: List[str], **kwargs) -> List[float]:
+        from rewards.format_reward import validate_format_tags, TAG_CONFIGS
+        return validate_format_tags(completions, TAG_CONFIGS['full_grpo'])
+
+class VinleFormatThinkAnswer(ORM):
+    """Format reward for ablation: REASONING + CONCLUSION"""
+    def __call__(self, completions: List[str], **kwargs) -> List[float]:
+        from rewards.format_reward import validate_format_tags, TAG_CONFIGS
+        return validate_format_tags(completions, TAG_CONFIGS['think_answer'])
+
+class VinleFormatExplainAnswer(ORM):
+    """Format reward for SFT: CONCLUSION + EXPLANATION"""
+    def __call__(self, completions: List[str], **kwargs) -> List[float]:
+        from rewards.format_reward import validate_format_tags, TAG_CONFIGS
+        return validate_format_tags(completions, TAG_CONFIGS['explain_answer'])
+
+class VinleAccuracyReward(ORM):
+    """Accuracy reward: Hybrid ROUGE-L + BERTScore"""
+    def __call__(self, completions: List[str], solution: List[str], **kwargs) -> List[float]:
+        from rewards.accuracy_reward import get_accuracy_scorer
+        try:
+            scorer = get_accuracy_scorer(alpha=0.5)
+            return scorer.accuracy_rewards_batch(completions, solution)
+        except Exception as e:
+            print(f"Error in vinle_accuracy: {e}")
+            return [0.0] * len(completions)
+
+class VinleExplanationReward(ORM):
+    """Explanation reward: BERTScore + CLIPScore"""
+    def __call__(self, completions: List[str], solution: List[str], **kwargs) -> List[float]:
+        from rewards.explanation_reward import get_explanation_scorer
+        
+        try:
+            scorer = get_explanation_scorer(alpha=0.5)
+            
+            # Extract image paths
+            if 'images' not in kwargs:
+                print("Error: 'images' not in kwargs")
+                return [0.0] * len(completions)
+            
+            batch_image_data = kwargs['images']
+            if len(batch_image_data) != len(completions):
+                print(f"Error: Image count mismatch")
+                return [0.0] * len(completions)
+            
+            image_paths = []
+            for img_data_list in batch_image_data:
+                if (isinstance(img_data_list, list) and len(img_data_list) > 0 and
+                    isinstance(img_data_list[0], dict) and 'path' in img_data_list[0]):
+                    image_paths.append(img_data_list[0]['path'])
+                else:
+                    image_paths.append(None)
+            
+            # Extract explanations
+            gt_explanations = [[scorer._extract_tag_content(sol, "EXPLANATION")] for sol in solution]
+            pred_explanations = [scorer._extract_tag_content(comp, "EXPLANATION") for comp in completions]
+            
+            if not (len(pred_explanations) == len(gt_explanations) == len(image_paths)):
+                print("Error: Length mismatch")
+                return [0.0] * len(completions)
+            
+            # Calculate rewards
+            NUM_GENERATIONS = int(os.getenv("NUM_GENERATIONS", 4))
+            prompt_ids = [i // NUM_GENERATIONS for i in range(len(completions))]
+            
+            rewards = scorer.explanation_rewards(
+                ground_truths=gt_explanations,
+                predictions=pred_explanations,
+                image_paths=image_paths,
+                prompt_ids=prompt_ids
+            )
+            
+            if len(rewards) != len(completions):
+                print(f"Error: Reward count mismatch")
+                return [0.0] * len(completions)
+            
+            return rewards
+            
+        except Exception as e:
+            print(f"Error in vinle_explanation: {e}")
+            import traceback
+            traceback.print_exc()
+            return [0.0] * len(completions)
+
+# Register VINLE rewards
+orms['vinle_format_our'] = VinleFormatReward
+orms['vinle_format_think_answer'] = VinleFormatThinkAnswer
+orms['vinle_format_explain_answer'] = VinleFormatExplainAnswer
+orms['vinle_accuracy'] = VinleAccuracyReward
+orms['vinle_explanation'] = VinleExplanationReward
+
+print("\n" + "="*80)
+print("VINLE-GRPO Rewards Registered:")
+print("="*80)
+print("  - vinle_format_our           : REASONING + CONCLUSION + EXPLANATION")
+print("  - vinle_format_think_answer  : REASONING + CONCLUSION")
+print("  - vinle_format_explain_answer: CONCLUSION + EXPLANATION")
+print("  - vinle_accuracy             : ROUGE-L + BERTScore")
+print("  - vinle_explanation          : BERTScore + CLIP")
+print("="*80 + "\n")

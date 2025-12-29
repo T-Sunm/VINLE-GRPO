@@ -26,7 +26,7 @@ By decoupling **reasoning (thinking)** from **explanation**, we achieve state-of
 ## � Project Structure
 
 ```
-vqa-nle/
+VINLE-GRPO/
 ├── external/                       # External dependencies (with modifications)
 │   ├── ms-swift/                  # GRPO training framework
 │   └── smile/                     # SMILE evaluation metric
@@ -66,8 +66,8 @@ vqa-nle/
 ### 1. Installation
 
 ```bash
-git clone https://github.com/yourusername/vqa-nle.git
-cd vqa-nle
+git clone https://github.com/T-Sunm/VINLE-GRPO.git
+cd VINLE-GRPO
 git submodule update --init --recursive  # Clone ms-swift and smile
 ```
 
