@@ -10,15 +10,17 @@ model:
   id_or_path: "OpenGVLab/InternVL3_5-2B"
   type: "internvl3"
   
-# Data Configuration (use think_answer mode data)
+# Data Configuration
 data:
-  train_dataset: "/mnt/VLAI_data/ViVQA-X/processed/ViVQA-X_train_think_answer.jsonl"
+  # Adjusted path to match your structure
+  train_dataset: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/data/processed/grpo/ViVQA-X_train_think_answer.jsonl"
   max_length: 4096
   max_completion_length: 1024
   
 # Reward Configuration
 rewards:
-  plugin_path: "external/ms-swift/examples/train/grpo/plugin/plugin.py"
+  # Absolute path to plugin
+  plugin_path: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/external/ms-swift/examples/train/grpo/plugin/plugin.py"
   functions:
     - vinle_format_think_answer  # Validates REASONING + CONCLUSION tags
     - vinle_accuracy             # ROUGE-L + BERTScore on CONCLUSION
@@ -76,7 +78,8 @@ training:
   
 # Output Configuration
 output:
-  dir: "output/grpo/ablation_think_answer"
+  # Absolute path
+  dir: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/output/grpo/ablation_think_answer"
   resume_from_checkpoint: null
   
 # Environment

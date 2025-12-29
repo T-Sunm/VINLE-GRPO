@@ -1406,7 +1406,7 @@ class VinleExplanationReward(ORM):
             return [0.0] * len(completions)
 
 # Register VINLE rewards
-orms['vinle_format_our'] = VinleFormatReward
+orms['vinle_format'] = VinleFormatReward
 orms['vinle_format_think_answer'] = VinleFormatThinkAnswer
 orms['vinle_format_explain_answer'] = VinleFormatExplainAnswer
 orms['vinle_accuracy'] = VinleAccuracyReward
@@ -1415,7 +1415,7 @@ orms['vinle_explanation'] = VinleExplanationReward
 print("\n" + "="*80)
 print("VINLE-GRPO Rewards Registered:")
 print("="*80)
-print("  - vinle_format_our           : REASONING + CONCLUSION + EXPLANATION")
+print("  - vinle_format           : REASONING + CONCLUSION + EXPLANATION")
 print("  - vinle_format_think_answer  : REASONING + CONCLUSION")
 print("  - vinle_format_explain_answer: CONCLUSION + EXPLANATION")
 print("  - vinle_accuracy             : ROUGE-L + BERTScore")

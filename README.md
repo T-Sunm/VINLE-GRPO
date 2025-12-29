@@ -18,47 +18,35 @@ By decoupling **reasoning (thinking)** from **explanation**, we achieve state-of
 ## 🔑 Key Features
 
 - **Composite Reward System**:
-  - **Format Reward**: Ensures structured output (`<think>`, `<answer>`, `<explain>`).
+  - **Format Reward**: Ensures structured output (`<REASONING>`, `<CONCLUSION>`, `<EXPLANATION>`).
   - **Accuracy Reward**: Hybrid metric (BERTScore + ROUGE) handling Vietnamese synonyms.
   - **Explanation Reward**: Optimizes semantic alignment for rationales.
-- **SOTA Performance**: Achieves **62.65%** accuracy on ViVQA-X (Vintern-3B), outperforming SFT and standard baselines.
+- **SOTA Performance**: Achieves **62.65%** accuracy on ViVQA-X, outperforming SFT and standard baselines.
 
-## � Project Structure
+## 🗂 Project Structure
 
 ```
 VINLE-GRPO/
-├── external/                       # External dependencies (with modifications)
-│   ├── ms-swift/                  # GRPO training framework
+├── configs/                        # ✨ Configuration files
+│   ├── grpo/                      # GRPO experiments
+│   │   ├── vinle_full.yaml       # Full method (R+C+E)
+│   │   └── ablation_think_answer.yaml # Ablation (R+C)
+│   └── sft/                       # SFT experiments
+│       └── baseline.yaml          # SFT baseline (C+E)
+│
+├── external/                       # External dependencies 
+│   ├── ms-swift/                  # Modified ms-swift framework
+│   │   └── examples/train/       
+│   │       ├── grpo/internal/run_grpo.sh  # GRPO runner script
+│   │       └── sft/run_sft.sh             # SFT runner script
 │   └── smile/                     # SMILE evaluation metric
 │
 ├── src/                            # Research code
-│   ├── data/                      # Data preparation for ViVQA-X
-│   ├── rewards/                   # Custom reward functions
-│   ├── evaluation/                # Evaluation pipeline
-│   └── inference/                 # Inference scripts
+│   ├── data/                      # Data processing
+│   ├── rewards/                   # Reward logic
+│   └── ...
 │
-├── scripts/                        # Executable scripts
-│   ├── train/                     # Training wrappers
-│   ├── eval/                      # Evaluation scripts
-│   └── data/                      # Data preprocessing
-│
-├── configs/                        # Configuration files
-│   ├── experiments/               # Per-experiment configs
-│   └── models/                    # Model-specific configs
-│
-├── experiments/                    # Experiment tracking
-│   ├── exp001_grpo_baseline/
-│   ├── exp002_grpo_ours/         # Main paper results
-│   └── exp003_ablation_study/
-│
-├── data/                          # Datasets
-│   ├── raw/                       # ViVQA-X (symlink)
-│   └── processed/                 # GRPO-formatted JSONL
-│
-├── docs/                          # Documentation
-│   └── paper/                     # Paper materials
-│
-└── notebooks/                     # Analysis notebooks
+└── output/                         # Training outputs & checkpoints
 ```
 
 ## 🚀 Getting Started
@@ -68,194 +56,95 @@ VINLE-GRPO/
 ```bash
 git clone https://github.com/T-Sunm/VINLE-GRPO.git
 cd VINLE-GRPO
-git submodule update --init --recursive  # Clone ms-swift and smile
+git submodule update --init --recursive
 ```
 
-### 2. Create Environment
+### 2. Environment Setup
 
 ```bash
 # Create conda environment
 conda create -n vqa-nle python=3.10 -y
 conda activate vqa-nle
 
-# Install dependencies
+# Install dependencies (adjust based on your setup)
 bash scripts/setup/install_env.sh
 ```
 
-### 3. Setup External Repositories
+## ⚡ Workflow
+
+### 1. Data Preparation
+
+Generate data for different training modes:
 
 ```bash
-# Setup ms-swift (with our modifications)
-cd external/ms-swift
-pip install -e .
+# 1. Full GRPO (Reasoning + Conclusion + Explanation)
+python -m src.data.dataset_loader --mode grpo --split train
 
-# Setup SMILE metric
-cd ../smile
-pip install -e .
-cd ../..
+# 2. Ablation (Reasoning + Conclusion only)
+python -m src.data.dataset_loader --mode think_answer --split train
+
+# 3. SFT Baseline (Conclusion + Explanation only)
+python -m src.data.dataset_loader --mode sft --split train
 ```
 
-### 3. Evaluation
+Data will be saved to `data/processed/`.
+
+### 2. Training with YAML Configs
+
+We support three main training modes, configured via YAML files.
+
+#### A. Full GRPO (Our Method)
+Uses all 3 tags and all rewards (Accuracy + Format + Explanation).
 
 ```bash
-python -c "import torch; print(torch.cuda.is_available())"
-python -c "from transformers import AutoModel; print('OK')"
+# Edit config if needed
+vim configs/grpo/vinle_full.yaml
+
+# Run training
+bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh \
+    configs/grpo/vinle_full.yaml
 ```
 
-## ⚡ Quick Start
-
-### Reproduce Paper Results (Vintern-3B)
+#### B. Ablation Study (No Explanation Reward)
+Uses only Reasoning + Conclusion tags. No explanation reward.
 
 ```bash
-# 1. Prepare data
-python -m src.data.dataset_loader
-
-# 2. Train with GRPO (our method)
-bash scripts/train/run_grpo_vintern.sh --exp_name exp002_grpo_ours
-
-# 3. Inference
-python -m src.inference.run_inference_grpo \
-    --model experiments/exp002_grpo_ours/checkpoints/final \
-    --output experiments/exp002_grpo_ours/results/predictions.jsonl
-
-# 4. Evaluate
-python -m src.evaluation.calculate_scores \
-    --input experiments/exp002_grpo_ours/results/predictions.jsonl \
-    --output experiments/exp002_grpo_ours/results/scores.json
+# Run training
+bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh \
+    configs/grpo/ablation_think_answer.yaml
 ```
 
-**Expected Results** (ViVQA-X test set):
-- Accuracy: **62.65%**
-- SMILE: **60.42**
-- BERTScore: **52.81**
-
-## 📊 Data Preparation
-
-### Dataset: ViVQA-X
-
-Download or link the ViVQA-X dataset:
+#### C. SFT Baseline
+Standard supervised fine-tuning. Uses Conclusion + Explanation tags.
 
 ```bash
-# Create symlink to ViVQA-X data
-ln -s /mnt/VLAI_data/ViVQA-X data/raw/ViVQA-X
-ln -s /mnt/VLAI_data/COCO_Images data/raw/COCO_Images
+# Run training
+bash external/ms-swift/examples/train/sft/run_sft.sh \
+    configs/sft/baseline.yaml
 ```
 
-### Convert to GRPO Format
+### 3. Monitoring
+
+Training logs are reported to WandB (if enabled in config) and saved in `output/`.
 
 ```bash
-python -m src.data.dataset_loader
+# Check training progress
+tail -f output/grpo/vinle_full/runs.log
 ```
 
-**Output format** (`data/processed/grpo/ViVQA-X_train_grpo.jsonl`):
+## 📝 Configuration Rules
 
-```json
-{
-  "id": 1,
-  "image": "COCO_train2014_000000139.jpg",
-  "conversations": [
-    {
-      "from": "human",
-      "value": "<image>You are a Visual Question Answering system...\nQuestion: {question}"
-    },
-    {
-      "from": "gpt",
-      "value": "<answer>{answer}</answer><explain>{explanation}</explain>"
-    }
-  ]
-}
-```
+To create new experiments, simply copy a YAML config and modify it:
 
-## 🏋️ Training
+1.  **Duplicate config**: `cp configs/grpo/vinle_full.yaml configs/grpo/my_experiment.yaml`
+2.  **Edit parameters**: Change `learning_rate`, `max_steps`, etc.
+3.  **Run**: `bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/my_experiment.yaml`
 
-### GRPO Training (Our Method)
+**Important**: Always update `output.dir` in your new config to avoid overwriting previous results.
 
-```bash
-# Vintern-3B backbone
-bash scripts/train/run_grpo_vintern.sh \
-    --exp_name exp002_grpo_ours \
-    --num_steps 1000 \
-    --reward_funcs "accuracy format explanation"
+## � Results
 
-# InternVL3.5 backbone
-bash scripts/train/run_grpo_internvl.sh \
-    --exp_name exp002_grpo_ours_internvl \
-    --num_steps 1000 \
-    --reward_funcs "accuracy format explanation"
-```
-
-### Key Training Parameters
-
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| `--learning_rate` | 1e-5 | Learning rate |
-| `--max_steps` | 1000 | Training budget |
-| `--lora_rank` | 32 | QLoRA rank |
-| `--lora_alpha` | 64 | QLoRA alpha |
-| `--num_generations` | 4 | GRPO group size (G) |
-| `--beta` | 0.04 | KL penalty coefficient |
-| `--temperature` | 0.9 | Sampling temperature |
-
-### Reward Functions
-
-Activate/deactivate rewards via `--reward_funcs`:
-
-```bash
-# Format only
---reward_funcs "format"
-
-# Accuracy + Format
---reward_funcs "accuracy format"
-
-# Full (our method)
---reward_funcs "accuracy format explanation"
-```
-
-**Implementation**: See `src/rewards/` for custom reward functions:
-- `format_reward.py`: Tag structure validation
-- `accuracy_reward.py`: Vietnamese hybrid matching (BERTScore + ROUGE)
-- `explanation_reward.py`: Semantic alignment for rationales
-
-## 🔍 Inference & Evaluation
-
-### Inference
-
-```bash
-python -m src.inference.run_inference_grpo \
-    --model experiments/exp002_grpo_ours/checkpoints/final \
-    --dataset data/processed/grpo/ViVQA-X_test_grpo.jsonl \
-    --output experiments/exp002_grpo_ours/results/predictions.jsonl \
-    --batch_size 8
-```
-
-### Evaluation
-
-```bash
-python -m src.evaluation.calculate_scores \
-    --input experiments/exp002_grpo_ours/results/predictions.jsonl \
-    --ground_truth data/raw/ViVQA-X/ViVQA-X_test.json \
-    --output experiments/exp002_grpo_ours/results/scores.json \
-    --metrics accuracy smile bertscore
-```
-
-**Output** (`scores.json`):
-
-```json
-{
-  "accuracy": 62.65,
-  "smile": 60.42,
-  "bertscore": 52.81,
-  "breakdown": {
-    "yes/no": {"accuracy": 78.3, "smile": 65.2},
-    "number": {"accuracy": 52.1, "smile": 56.8},
-    "other": {"accuracy": 58.9, "smile": 59.1}
-  }
-}
-```
-
-## 📈 Results
-
-### Main Results (Table 1 from Paper)
+### Main Results
 
 | Method | Backbone | Acc ↑ | SMILE ↑ | BS ↑ |
 |--------|----------|-------|---------|------|
@@ -263,33 +152,14 @@ python -m src.evaluation.calculate_scores \
 | SFT | Vintern-3B | 46.60 | 51.45 | 53.69 |
 | GRPO (DeepSeek) | Vintern-3B | 56.15 | 57.07 | 52.20 |
 | **GRPO (Ours)** | **Vintern-3B** | **62.65** | **60.42** | **52.81** |
-| | | | | |
-| Base (Zero-shot) | InternVL3.5 | 55.28 | 69.45 | 52.10 |
-| SFT | InternVL3.5 | 56.20 | 69.00 | 52.20 |
-| GRPO (DeepSeek) | InternVL3.5 | 54.98 | 69.14 | 52.14 |
-| **GRPO (Ours)** | **InternVL3.5** | **61.23** | **65.47** | **52.24** |
 
-### Ablation Study (Table 2 from Paper)
+### Ablation Study
 
 | Method | Acc ↑ | SMILE ↑ | BS ↑ |
 |--------|-------|---------|------|
-| Base (Direct) | 46.2 | 51.3 | 52.5 |
-| Base (CoT) | 54.8 | 56.0 | 51.9 |
-| GRPO w/o Reasoning | 42.8 | 54.7 | 53.9 |
-| GRPO w/o Explanation | 47.4 | 56.7 | 50.7 |
-| **GRPO (Full)** | **62.7** | **60.4** | **52.8** |
-
-**Key Findings**:
-- Reasoning improves accuracy by **+8.6%** (54.8% vs 46.2%)
-- Decoupling reasoning from explanation: **+15.3%** (62.7% vs 47.4%)
-
-## 📝 Citation
-
-If you use this code or our methodology, please cite:
-
-```bibtex
-
-```
+| GRPO (Full) | **62.7** | **60.4** | **52.8** |
+| w/o Reasoning | 42.8 | 54.7 | 53.9 |
+| w/o Explanation | 47.4 | 56.7 | 50.7 |
 
 ## 📧 Contact
 
