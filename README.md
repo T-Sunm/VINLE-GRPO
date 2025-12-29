@@ -70,6 +70,29 @@ conda activate vqa-nle
 bash scripts/setup/install_env.sh
 ```
 
+## 🎯 Quick Start (Complete Workflow)
+
+```bash
+# 1. Generate training data
+python -m src.data.dataset_loader --mode grpo --split train
+
+# 2. Train with GRPO
+bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh \
+    configs/grpo/vinle_full.yaml
+# → Note checkpoint path from output logs
+
+# 3. Merge LoRA weights
+# Edit merge_lora.sh with your checkpoint path first!
+vim external/ms-swift/examples/train/grpo/internal/merge_lora.sh
+bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh
+
+# 4. Run inference (use merged model)
+python -m src.inference.run_inference_grpo \
+    --model output/grpo/vinle_full/v0-YYYYMMDD-HHMMSS/checkpoint-XXXX-merged \
+    --mode grpo \
+    --limit 100  # Test with 100 samples first
+```
+
 ## ⚡ Workflow
 
 ### 1. Data Preparation
@@ -130,6 +153,119 @@ Training logs are reported to WandB (if enabled in config) and saved in `output/
 ```bash
 # Check training progress
 tail -f output/grpo/vinle_full/runs.log
+```
+
+### 4. Merge LoRA Weights
+
+After training completes, check the output for checkpoint location:
+
+```
+Train: 100%|████████████████████| 2/2 [03:10<00:00, 95.29s/it]
+[INFO:swift] last_model_checkpoint: /path/to/output/grpo/vinle_full/v0-20251229-135812/checkpoint-2
+```
+
+**Step-by-step:**
+
+1. **Find your checkpoint path** from training logs (example above)
+
+2. **Edit merge script** with your checkpoint path:
+```bash
+vim external/ms-swift/examples/train/grpo/internal/merge_lora.sh
+```
+
+Update these variables:
+```bash
+BASE_MODEL="OpenGVLab/InternVL3_5-2B"  # Should match your training
+MODEL_TYPE="internvl3"                 # Should match your training
+CHECKPOINT_PATH="/home/.../output/grpo/vinle_full/v0-YYYYMMDD-HHMMSS/checkpoint-XXXX"
+```
+
+3. **Run merge:**
+```bash
+bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh
+```
+
+4. **Merged model location:**
+```
+v0-YYYYMMDD-HHMMSS/checkpoint-XXXX-merged/
+```
+
+Example:
+```
+output/grpo/vinle_full/v0-20251229-135812/checkpoint-2
+                                                    ↓
+output/grpo/vinle_full/v0-20251229-135812/checkpoint-2-merged/  ← Use this for inference
+```
+
+### 5. Inference
+
+We provide **5 separate inference scripts** for InternVL/Vintern models:
+
+#### A. Zero-shot (Base Model Evaluation)
+```bash
+python -m src.inference.internvl_based.zero_shot \
+    --model OpenGVLab/InternVL3_5-2B \
+    --output_dir results/inference/zeroshot \
+    --limit 100  # Optional: test with 100 samples
+```
+
+#### B. SFT Baseline (C+E)
+```bash
+python -m src.inference.internvl_based.sft \
+    --model output/sft/baseline/v0-YYYYMMDD-HHMMSS/checkpoint-XXXX-merged \
+    --output_dir results/inference/sft
+```
+
+#### C. OTA Ablation (R+C)
+```bash
+python -m src.inference.internvl_based.ota \
+    --model output/grpo/ablation_think_answer/v0-YYYYMMDD-HHMMSS/checkpoint-XXXX-merged \
+    --output_dir results/inference/ota
+```
+
+#### D. OEA Ablation (C+E)
+```bash
+python -m src.inference.internvl_based.oea \
+    --model output/grpo/ablation_explain_answer/v0-YYYYMMDD-HHMMSS/checkpoint-XXXX-merged \
+    --output_dir results/inference/oea
+```
+
+#### E. Full GRPO - Our Method (R+C+E)
+```bash
+python -m src.inference.internvl_based.grpo \
+    --model output/grpo/vinle_full/v0-YYYYMMDD-HHMMSS/checkpoint-XXXX-merged \
+    --output_dir results/inference/grpo
+```
+
+**Common arguments:**
+- `--data_path` - Test data JSON (default: ViVQA-X test)
+- `--image_folder` - Image directory (default: COCO val2014)
+- `--output_name custom_name` - Custom output filename
+- `--limit 100` - Process only 100 samples (for testing)
+- `--device cpu` - Use CPU instead of GPU
+
+**Comparison of inference modes:**
+
+| Mode | Script | Reasoning | Answer | Explanation | Use Case |
+|------|--------|-----------|--------|-------------|----------|
+| Zero-shot | `zero_shot.py` | ❌ | ✅ | ❌ | Base model |
+| SFT | `sft.py` | ❌ | ✅ | ✅ | SFT baseline |
+| OTA | `ota.py` | ✅ | ✅ | ❌ | Ablation (no explain reward) |
+| OEA | `oea.py` | ❌ | ✅ | ✅ | Ablation (no reasoning reward) |
+| **GRPO** | `grpo.py` | ✅ | ✅ | ✅ | **Full method (ours)** |
+
+**Output format** (consistent across all modes):
+```json
+{
+  "image_id": 123,
+  "question": "What is in the image?",
+  "answer": "Ground truth answer",
+  
+  "pred_reasoning": "Suy luận..." (empty if not applicable),
+  "pred_answer": "Câu trả lời",
+  "pred_explanation": "Giải thích..." (empty if not applicable),
+  "raw_response": "Full model response"
+}
 ```
 
 ## 📝 Configuration Rules

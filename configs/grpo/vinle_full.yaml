@@ -72,7 +72,7 @@ training:
   
 # Output Configuration
 output:
-  dir: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/output/grpo/vinle_full"
+  dir: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/outputs/training/grpo/vinle_full/"
   resume_from_checkpoint: null  # Path to checkpoint or null
   
 # Environment

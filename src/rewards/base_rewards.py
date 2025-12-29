@@ -1,95 +1,122 @@
-# src/rewards/base_reward.py
-import torch
-from torchmetrics.text import BERTScore
-import os
+# src/rewards/base_rewards.py
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+import os
+import torch
+import bert_score
+
+# Remove hardcoded CUDA_VISIBLE_DEVICES to allow config control
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 class BaseRewardScorer:
     """
-    Base class chứa shared BERTScore model để tái sử dụng cho nhiều reward functions.
+    Base class containing shared BERTScore model to reuse across reward functions.
+    Uses 'bert_score' library directly (not torchmetrics) for better compatibility with PhoBERT.
     """
+    
     _shared_bertscore = None
     _device = None
+    _model_path = None
+    
+    # Mapping model names to HuggingFace IDs or paths
+    MODEL_MAPPING = {
+        'phobert': 'vinai/phobert-base',
+        'bert': 'bert-base-uncased'
+    }
     
     @classmethod
-    def get_bertscore_metric(cls):
-        """Lazy initialization của shared BERTScore model"""
-        if cls._shared_bertscore is None:
+    def initialize_bertscore(cls, model_name_or_path="phobert"):
+        """Initialize shared BERTScore model with bert-score library."""
+        # Resolve model path
+        model_path = cls.MODEL_MAPPING.get(model_name_or_path, model_name_or_path)
+        
+        # Check if re-initialization is needed
+        if cls._shared_bertscore is None or cls._model_path != model_path:
             cls._device = "cuda" if torch.cuda.is_available() else "cpu"
-            print(f"Initializing shared BERTScore (PhoBERT) on device: {cls._device}")
-            cls._shared_bertscore = BERTScore(
-                model_name_or_path="/mnt/dataset1/pretrained_fm/vinai/phobert-base",
-                num_layers=12,
-                rescale_with_baseline=False, 
-                device=cls._device
-            )
-            print("Shared BERTScore initialized.")
+            cls._model_path = model_path
+            
+            print(f"Initializing shared BERTScore ({model_path}) on {cls._device}...")
+            
+            try:
+                cls._shared_bertscore = bert_score.BERTScorer(
+                    model_type=model_path,
+                    num_layers=12,
+                    batch_size=64,
+                    nthreads=4,
+                    all_layers=False,
+                    idf=False,
+                    device=cls._device,
+                    lang=None,  # Auto-detect or specified by model
+                    rescale_with_baseline=False
+                )
+                print("✅ Shared BERTScore initialized.")
+            except Exception as e:
+                print(f"❌ Error initializing BERTScore: {e}")
+                cls._shared_bertscore = None
+                
         return cls._shared_bertscore
     
     @classmethod
-    def calculate_bertscore_single(cls, prediction: str, ground_truth: str) -> float:
+    def calculate_bertscore_batch(cls, ground_truths: dict, predictions: dict,
+                                  model_name_or_path="phobert") -> dict:
         """
-        Tính BERTScore cho một cặp prediction-ground_truth.
+        Calculate BERTScore for a batch of predictions.
         
         Args:
-            prediction: Câu dự đoán
-            ground_truth: Câu tham chiếu
-            
-        Returns:
-            BERTScore F1 (float)
-        """
-        pred = str(prediction).strip()
-        gt = str(ground_truth).strip()
-        
-        if not pred or not gt:
-            return 0.0
-        
-        try:
-            metric = cls.get_bertscore_metric()
-            metric.reset()
-            metric.update([pred], [gt])
-            score_dict = metric.compute()
-            return score_dict['f1'].item()
-        except Exception as e:
-            print(f"Error calculating BERTScore: {e}")
-            return 0.0
-    
-    @classmethod
-    def calculate_bertscore_batch(cls, ground_truths: dict, predictions: dict) -> dict:
-        """
-        Tính BERTScore cho batch predictions.
-        
-        Args:
-            ground_truths: {id: [gt1, gt2, ...]} hoặc {id: gt_string}
+            ground_truths: {id: [gt1, gt2, ...]} or {id: "gt_string"}
             predictions: {id: prediction_string}
+            model_name_or_path: 'bert', 'phobert', or full HuggingFace path
             
         Returns:
             {id: bertscore_f1}
         """
-        bert_scores_dict = {}
-
-        for id_, pred in predictions.items():
+        ids = list(predictions.keys())
+        bert_scores_dict = {id_: 0.0 for id_ in ids}
+        
+        scorer = cls.initialize_bertscore(model_name_or_path)
+        if scorer is None:
+            return bert_scores_dict
+        
+        # Prepare batch data
+        valid_ids = []
+        preds_list = []
+        refs_list = []
+        
+        for id_ in ids:
+            pred = str(predictions[id_]).strip()
             gt = ground_truths.get(id_, [])
             
-            # Xử lý GT: string hoặc list
+            # Format Ground Truth
             if isinstance(gt, str):
-                gt_list = [gt.strip()] if gt.strip() else []
+                gt_text = gt.strip()
+            elif isinstance(gt, list) and len(gt) > 0:
+                # bert_score supports multiple references, but here we simplify to similar structure
+                # For multiple refs, we can adjust logic if needed. 
+                # This implementation aligns with the reference file provided.
+                gt_text = str(gt[0]).strip()
             else:
-                gt_list = [str(g).strip() for g in gt if str(g).strip()]
+                gt_text = ""
             
-            if not gt_list:
-                bert_scores_dict[id_] = 0.0
-                continue
+            if pred and gt_text:
+                valid_ids.append(id_)
+                preds_list.append(pred)
+                refs_list.append(gt_text)
+        
+        if not valid_ids:
+            return bert_scores_dict
+        
+        # Batch compute with bert_score
+        try:
+            # Wrap in no_grad to prevent memory leaks/graph build-up
+            with torch.no_grad():
+                # score returns (P, R, F1)
+                P, R, F1 = scorer.score(preds_list, refs_list)
+                
+                for i, id_ in enumerate(valid_ids):
+                    bert_scores_dict[id_] = F1[i].item()
+        
+        except Exception as e:
+            print(f"Error calculating BERTScore batch: {e}")
+            # Fallback to 0.0 is handled by initialization of bert_scores_dict
             
-            # Tính BERTScore với TẤT CẢ references và lấy max
-            scores = []
-            for gt_text in gt_list:
-                score = cls.calculate_bertscore_single(pred, gt_text)
-                scores.append(score)
-            
-            # Lấy score cao nhất trong các references
-            bert_scores_dict[id_] = max(scores)
-
         return bert_scores_dict
