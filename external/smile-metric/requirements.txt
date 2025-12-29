@@ -1,0 +1,14 @@
+numpy
+scikit-learn
+nltk
+tqdm
+transformers
+openai
+requests
+sentence-transformers
+huggingface-hub
+bert-score
+rouge-score
+moverscore @ git+https://github.com/AIPHES/emnlp19-moverscore.git
+pyemd
+evaluate

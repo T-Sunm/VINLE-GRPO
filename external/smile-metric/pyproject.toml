@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="smile"
+version="0.1.0"
+description = "SMILE: A Composite Lexical-Semantic Metric for Question-Answering Evaluation"
+authors = [
+    {name="Shrikant Kendre"},
+    {name="Austin Xu"},
+    {name="Shafiq Joty"},
+    {name="Juan Carlos Niebles"},
+    {name="Honglu Zhou"},
+    {name="Michael Ryoo"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE.txt" }
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "nltk",
+    "tqdm",
+    "transformers",
+    "openai",
+    "requests",
+    "sentence-transformers",
+    "huggingface-hub",
+    "bert-score",
+    "rouge-score",
+    "moverscore @ git+https://github.com/AIPHES/emnlp19-moverscore.git",
+    "pyemd",
+    "evaluate"
+]
+
+[tool.setuptools.packages.find]
+include = ["smile*"]
+exclude = ["pyscripts*", "sample_data*"]

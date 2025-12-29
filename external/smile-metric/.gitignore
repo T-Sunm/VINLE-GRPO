@@ -1,0 +1,13 @@
+# macOS artifacts
+.DS_Store
+
+# Local documents and artifacts (untracked)
+*.pdf
+
+# Python cache directories
+**/__pycache__/
+
+# Python virtual environments
+.venv/
+
+

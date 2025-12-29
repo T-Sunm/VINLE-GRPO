@@ -1,0 +1,22 @@
+[{
+    "id": "1",
+    "question": "What is the capital of France?",
+    "answer": "Paris",
+    "syn_ans": "The capital of France is Paris.",
+    "pred": "Paris is known to the capital of France." 
+  },
+  {
+    "id": "2",
+    "question": "What is the capital of France?",
+    "answer": "Paris",
+    "syn_ans": "The capital of France is Paris.",
+    "pred": "Paris is known to the capital of France." 
+  },
+  {
+    "id": "3",
+    "question": "What is the capital of France?",
+    "answer": "Paris",
+    "syn_ans": "The capital of France is Paris.",
+    "pred": "Paris is known to the capital of France." 
+  }
+  ]
