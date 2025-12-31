@@ -15,17 +15,7 @@ This study investigates an adaptation of Group Relative Policy Optimization (GRP
   <img src="assets/main_figure.jpg" width="100%" alt="Main Figure">
 </p>
 
-### Key Results
 
-<div align="center">
-
-| Method | Backbone | Acc ↑ | SMILE ↑ | BS ↑ |
-|:---:|:---:|:---:|:---:|:---:|
-| Base (Zero-shot) | Vintern-3B | 54.83 | 56.00 | 51.90 |
-| SFT | Vintern-3B | 46.60 | 51.45 | 53.69 |
-| **GRPO (Ours)** | **Vintern-3B** | **62.65** | **60.42** | **52.81** |
-
-</div>
 
 ---
 
@@ -133,19 +123,7 @@ VINLE-GRPO/
 
 ---
 
-## Detailed Documentation
-<div align="center">
 
-| Component | Quick Example | Full Documentation |
-|:---:|:---:|:---:|
-| **Training** | `bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vinle_full.yaml` | [Training Guide](docs/TRAINING.md) |
-| **Inference** | `python -m src.inference.internvl_based.grpo --model <path>` | [Inference Guide](src/inference/) |
-| **Evaluation** | `python -m src.evaluation.calculate_scores --input-dir <path>` | [Evaluation Guide](src/evaluation/) |
-| **Scripts** | `bash scripts/eval_grpo.sh` | [Scripts Guide](scripts/) |
-
-</div>
-
----
 
 ## Inference Modes
 
