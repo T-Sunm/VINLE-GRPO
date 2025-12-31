@@ -173,7 +173,6 @@ We provide **5 inference modes** for systematic evaluation:
 
 </div>
 
----
 
 <!-- 
 ## Citation
@@ -188,19 +187,15 @@ We provide **5 inference modes** for systematic evaluation:
 ```
 -->
 
----
-
 ## Contact
 
 For questions or collaborations, please contact **Quang-Minh Tran** or **Phat-Dat To**.
-
----
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+<br>
 
 **Last Updated**: 2025-12-31  
 **Version**: 2.0 (Streamlined)
