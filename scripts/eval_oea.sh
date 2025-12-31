@@ -10,8 +10,9 @@ FILES="v2-20251229-175350.json"
 
 if [ -z "$FILENAMES" ]; then
     echo "Evaluating all OEA results..."
-    python -m src.evaluation.calculate_scores --input-dir outputs/inference/oea --device cuda:0
+    python3 -m src.evaluation.calculate_scores --input-dir outputs/inference/oea --device cuda:0
 else
     echo "Evaluating OEA: $FILENAMES"
-    python -m src.evaluation.calculate_scores --input-dir outputs/inference/oea --filenames $FILENAMES --device cuda:0
+    python3 -m src.evaluation.calculate_scores --input-dir outputs/inference/oea --filenames $FILENAMES --device cuda:0
 fi
+

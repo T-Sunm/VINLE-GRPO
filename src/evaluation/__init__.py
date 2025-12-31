@@ -29,7 +29,6 @@ from .core import (
 
 from .metrics import (
     # VQA accuracy
-    normalize_unsorted,
     check_accuracy,
     compute_accuracy,
     # NLG metrics
@@ -58,7 +57,6 @@ __all__ = [
     "detect_format",
     "validate_format_consistency",
     # Metrics - VQA accuracy
-    "normalize_unsorted",
     "check_accuracy",
     "compute_accuracy",
     # Metrics - NLG
@@ -68,3 +66,4 @@ __all__ = [
     # Metrics - SMILE
     "compute_smile_scores",
 ]
+

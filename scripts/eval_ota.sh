@@ -10,8 +10,9 @@ FILES="v2-20251229-175311.json"
 
 if [ -z "$FILENAMES" ]; then
     echo "Evaluating all OTA results..."
-    python -m src.evaluation.calculate_scores --input-dir outputs/inference/ota --device cuda:0
+    python3 -m src.evaluation.calculate_scores --input-dir outputs/inference/ota --device cuda:0
 else
     echo "Evaluating OTA: $FILENAMES"
-    python -m src.evaluation.calculate_scores --input-dir outputs/inference/ota --filenames $FILENAMES --device cuda:0
+    python3 -m src.evaluation.calculate_scores --input-dir outputs/inference/ota --filenames $FILENAMES --device cuda:0
 fi
+
