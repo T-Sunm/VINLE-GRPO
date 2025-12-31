@@ -13,7 +13,7 @@ src/inference/
 │
 ├── internvl_based/             # Our Methods (Paper Contributions)
 │   ├── model.py                # VinternModel class
-│   ├── grpo.py                 # Full GRPO (R+C+E) ⭐
+│   ├── grpo.py                 # Full GRPO (R+C+E)
 │   ├── ota.py                  # OTA Ablation (R+C)
 │   ├── oea.py                  # OEA Ablation (C+E)
 │   ├── sft.py                  # SFT Baseline (C+E)
@@ -29,8 +29,8 @@ src/inference/
 ## Inference Types (Our Methods)
 
 | Mode | Tags | Description | Use Case |
-|------|------|-------------|----------|
-| `grpo` | R+C+E | Full GRPO method | **Our main contribution** ⭐ |
+|:---:|:---:|:---:|:---:|
+| `grpo` | R+C+E | Full GRPO method | **Our main contribution** |
 | `ota` | R+C | Only Thinking + Answer | Ablation: No explanation reward |
 | `oea` | C+E | Only Explanation + Answer | Ablation: No reasoning reward |
 | `sft` | C+E | Supervised fine-tuning | Baseline comparison |
@@ -43,7 +43,7 @@ src/inference/
 ### Our Methods (InternVL-based)
 
 ```bash
-# 1. Full GRPO (Our Main Method) ⭐
+# 1. Full GRPO (Our Main Method)
 python -m src.inference.internvl_based.grpo \
     --model output/grpo/vinle_full/.../checkpoint-XXX-merged
 

@@ -34,7 +34,7 @@ bash scripts/eval_all.sh
 ## Available Scripts
 
 | Script | Input Folder | Example |
-|--------|--------------|---------|
+|:---:|:---:|:---:|
 | `eval_grpo.sh` | `outputs/inference/grpo/` | `bash scripts/eval_grpo.sh file.json` |
 | `eval_ota.sh` | `outputs/inference/ota/` | `bash scripts/eval_ota.sh file.json` |
 | `eval_oea.sh` | `outputs/inference/oea/` | `bash scripts/eval_oea.sh file.json` |

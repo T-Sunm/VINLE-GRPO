@@ -7,7 +7,7 @@
 
 ---
 
-## 💡 Overview
+## Overview
 
 We introduce a novel approach to improve Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) using **Group Relative Policy Optimization (GRPO)**. By decoupling **reasoning (thinking)** from **explanation**, we achieve state-of-the-art performance on the ViVQA-X benchmark.
 
@@ -18,14 +18,14 @@ We introduce a novel approach to improve Vietnamese Visual Question Answering wi
 ### Key Results
 
 | Method | Backbone | Acc ↑ | SMILE ↑ | BS ↑ |
-|--------|----------|-------|---------|------|
+|:---:|:---:|:---:|:---:|:---:|
 | Base (Zero-shot) | Vintern-3B | 54.83 | 56.00 | 51.90 |
 | SFT | Vintern-3B | 46.60 | 51.45 | 53.69 |
 | **GRPO (Ours)** | **Vintern-3B** | **62.65** | **60.42** | **52.81** |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Installation
 
@@ -60,7 +60,7 @@ bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vin
 bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh
 ```
 
-> **📖 For detailed training guide**, see [Training Documentation](external/ms-swift/examples/train/)
+> **For detailed training guide**, see [Training Documentation](external/ms-swift/examples/train/)
 
 ### 4. Inference
 
@@ -71,7 +71,7 @@ python -m src.inference.internvl_based.grpo \
     --output_dir outputs/inference/grpo
 ```
 
-> **📖 For all inference modes (GRPO, OTA, OEA, SFT, Zero-shot)**, see [Inference Documentation](src/inference/)
+> **For all inference modes (GRPO, OTA, OEA, SFT, Zero-shot)**, see [Inference Documentation](src/inference/)
 
 ### 5. Evaluation
 
@@ -82,7 +82,7 @@ python -m src.evaluation.calculate_scores \
     --device cuda:0
 ```
 
-> **📖 For detailed evaluation options**, see [Evaluation Documentation](src/evaluation/)
+> **For detailed evaluation options**, see [Evaluation Documentation](src/evaluation/)
 
 Or use convenient scripts:
 
@@ -94,11 +94,11 @@ bash scripts/eval_grpo.sh
 bash scripts/eval_all.sh
 ```
 
-> **📖 For evaluation scripts guide**, see [Scripts Documentation](scripts/)
+> **For evaluation scripts guide**, see [Scripts Documentation](scripts/)
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 VINLE-GRPO/
@@ -131,10 +131,10 @@ VINLE-GRPO/
 
 ---
 
-## � Detailed Documentation
+## Detailed Documentation
 
 | Component | Quick Example | Full Documentation |
-|-----------|--------------|-------------------|
+|:---:|:---:|:---:|
 | **Training** | `bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vinle_full.yaml` | [Training Guide](external/ms-swift/examples/train/) |
 | **Inference** | `python -m src.inference.internvl_based.grpo --model <path>` | [Inference Guide](src/inference/) |
 | **Evaluation** | `python -m src.evaluation.calculate_scores --input-dir <path>` | [Evaluation Guide](src/evaluation/) |
@@ -142,13 +142,13 @@ VINLE-GRPO/
 
 ---
 
-## � Inference Modes
+## Inference Modes
 
 We provide **5 inference modes** for systematic evaluation:
 
 | Mode | Tags | Description | Script |
-|------|------|-------------|--------|
-| **GRPO** ⭐ | R+C+E | Full GRPO method (our contribution) | `src.inference.internvl_based.grpo` |
+|:---:|:---:|:---:|:---:|
+| **GRPO** | R+C+E | Full GRPO method (our contribution) | `src.inference.internvl_based.grpo` |
 | **OTA** | R+C | Ablation: Only Thinking + Answer | `src.inference.internvl_based.ota` |
 | **OEA** | C+E | Ablation: Only Explanation + Answer | `src.inference.internvl_based.oea` |
 | **SFT** | C+E | Supervised fine-tuning baseline | `src.inference.internvl_based.sft` |
@@ -156,16 +156,16 @@ We provide **5 inference modes** for systematic evaluation:
 
 *(R=REASONING, C=CONCLUSION, E=EXPLANATION)*
 
-> **📖 See full inference documentation**: [src/inference/README.md](src/inference/)
+> **See full inference documentation**: [src/inference/README.md](src/inference/)
 
 ---
 
-## � Main Results
+## Main Results
 
 ### ViVQA-X Test Set
 
 | Method | Backbone | Acc ↑ | SMILE ↑ | BS ↑ |
-|--------|----------|-------|---------|------|
+|:---:|:---:|:---:|:---:|:---:|
 | Base (Zero-shot) | Vintern-3B | 54.83 | 56.00 | 51.90 |
 | SFT | Vintern-3B | 46.60 | 51.45 | 53.69 |
 | GRPO (DeepSeek) | Vintern-3B | 56.15 | 57.07 | 52.20 |
@@ -174,43 +174,33 @@ We provide **5 inference modes** for systematic evaluation:
 ### Ablation Study
 
 | Method | Acc ↑ | SMILE ↑ | BS ↑ |
-|--------|-------|---------|------|
+|:---:|:---:|:---:|:---:|
 | GRPO (Full) | **62.7** | **60.4** | **52.8** |
 | w/o Reasoning | 42.8 | 54.7 | 53.9 |
 | w/o Explanation | 47.4 | 56.7 | 50.7 |
 
 ---
 
-## �️ Key Features
-
-- **Composite Reward System**: Format + Accuracy + Explanation rewards
-- **Clean Research Infrastructure**: External dependencies isolated in `external/`
-- **YAML-based Configuration**: Full reproducibility with config files
-- **Auto-format Detection**: Evaluation system automatically detects output formats
-- **Modular Design**: Easy to extend with new models or reward functions
-
----
-
-## 📝 Citation
+## Citation
 
 ```bibtex
-@inproceedings{vinle-grpo-2026,
+<!-- @inproceedings{vinle-grpo-2026,
   title={Enhancing Vietnamese VQA-NLE via Learning to Explain with GRPO},
   author={Tran, Quang-Minh and To, Phat-Dat},
   booktitle={Proceedings of ICISN 2026},
   year={2026}
-}
+} -->
 ```
 
 ---
 
-## 📧 Contact
+## Contact
 
 For questions or collaborations, please contact **Quang-Minh Tran** or **Phat-Dat To**.
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
