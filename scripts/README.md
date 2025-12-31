@@ -2,6 +2,8 @@
 
 Quick shell scripts for evaluating inference results.
 
+> These scripts are convenient wrappers for the underlying [Evaluation Module](../src/evaluation/README.md).
+
 ## Structure
 
 ```
@@ -10,7 +12,6 @@ scripts/
 ├── eval_ota.sh        # Evaluate OTA (Thinking+Answer)
 ├── eval_oea.sh        # Evaluate OEA (Explanation+Answer)
 ├── eval_zeroshot.sh   # Evaluate Zero-shot outputs
-├── eval_all.sh        # Evaluate ALL formats recursively
 └── setup/             # Environment setup scripts
 ```
 
@@ -33,11 +34,7 @@ Or pass filenames directly:
 bash scripts/eval_grpo.sh v2-20251229-175222.json
 ```
 
-### Evaluate All Formats
 
-```bash
-bash scripts/eval_all.sh
-```
 
 ---
 
@@ -51,7 +48,6 @@ bash scripts/eval_all.sh
 | `eval_ota.sh` | `outputs/inference/ota/` | `bash scripts/eval_ota.sh file.json` |
 | `eval_oea.sh` | `outputs/inference/oea/` | `bash scripts/eval_oea.sh file.json` |
 | `eval_zeroshot.sh` | `outputs/inference/zeroshot/` | `bash scripts/eval_zeroshot.sh file.json` |
-| `eval_all.sh` | All formats (recursive) | `bash scripts/eval_all.sh output.csv` |
 
 </div>
 
@@ -119,7 +115,7 @@ Results saved as CSV with metrics:
 
 - **Easy editing**: Edit `FILES` variable in script
 - **Quick testing**: Pass filenames as arguments
-- **Batch evaluation**: Use `eval_all.sh` for all formats
+
 - **GPU selection**: Edit `--device cuda:0` in script
 
 ---

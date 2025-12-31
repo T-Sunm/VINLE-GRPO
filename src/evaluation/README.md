@@ -2,6 +2,8 @@
 
 Evaluate inference results using `calculate_scores.py`.
 
+> **Tip**: For easier execution using shell scripts (recommended), see [Scripts Documentation](../../scripts/README.md).
+
 ## Structure
 
 ```
@@ -29,16 +31,7 @@ python -m src.evaluation.calculate_scores \
     --device cuda:0
 ```
 
-### 2. Recursive Evaluation (All Folders)
-
-```bash
-python -m src.evaluation.calculate_scores \
-    --input-dir outputs/inference \
-    --recursive \
-    --output-file results/all_formats.csv
-```
-
-### 3. Specific Files
+### 2. Specific Files
 
 ```bash
 python -m src.evaluation.calculate_scores \
@@ -54,7 +47,6 @@ python -m src.evaluation.calculate_scores \
 |:---:|:---:|:---:|
 | `--input-dir` | `outputs/inference` | Directory containing JSON files |
 | `--filenames` | `[]` | List of specific filenames to evaluate |
-| `--recursive` | `False` | Search subdirectories recursively |
 | `--output-file` | auto | Output CSV filename |
 | `--device` | `cuda:0` | GPU device for models |
 | `--cuda-device` | `0` | CUDA_VISIBLE_DEVICES ID |

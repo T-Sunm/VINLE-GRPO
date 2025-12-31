@@ -255,8 +255,6 @@ def main():
                        help="Directory containing JSON inference results")
     parser.add_argument("--filenames", nargs="+", default=[],
                        help="Specific filenames to evaluate")
-    parser.add_argument("--recursive", action="store_true",
-                       help="Recursively find JSON files in subdirectories")
     parser.add_argument("--output-file", type=str, default=None,
                        help="Output CSV filename (auto-generated if not specified)")
     parser.add_argument("--device", type=str, default="cuda:0",
@@ -271,13 +269,6 @@ def main():
     if args.filenames:
         files = [f if f.endswith(".json") else f"{f}.json" for f in args.filenames]
         file_paths = [os.path.join(args.input_dir, f) for f in files]
-    elif args.recursive:
-        file_paths = []
-        for root, _, files in os.walk(args.input_dir):
-            for f in files:
-                if f.endswith(".json") and "_score" not in f and "summary" not in f:
-                    file_paths.append(os.path.join(root, f))
-        file_paths = sorted(file_paths)
     else:
         files = [f for f in os.listdir(args.input_dir)
                 if f.endswith(".json") and "_score" not in f and "summary" not in f]

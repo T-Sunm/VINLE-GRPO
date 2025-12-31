@@ -79,26 +79,24 @@ python -m src.inference.internvl_based.grpo \
 
 ### 5. Evaluation
 
+**Recommended: Use Helper Scripts**
+
 ```bash
-# Evaluate results
+# Quick evaluation (GRPO)
+bash scripts/eval_grpo.sh 
+```
+
+> **For detailed usage of evaluation scripts**, see [Scripts Documentation](scripts/)
+
+**Manual Method:**
+
+```bash
 python -m src.evaluation.calculate_scores \
     --input-dir outputs/inference/grpo \
     --device cuda:0
 ```
 
-> **For detailed evaluation options**, see [Evaluation Documentation](src/evaluation/)
-
-Or use convenient scripts:
-
-```bash
-# Quick evaluation
-bash scripts/eval_grpo.sh
-
-# Evaluate all formats
-bash scripts/eval_all.sh
-```
-
-> **For evaluation scripts guide**, see [Scripts Documentation](scripts/)
+> **For internal evaluation pipeline details**, see [Evaluation Documentation](src/evaluation/)
 
 ---
 
