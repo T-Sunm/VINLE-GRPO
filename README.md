@@ -9,7 +9,7 @@
 
 ## Overview
 
-We introduce a novel approach to improve Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) using **Group Relative Policy Optimization (GRPO)**. By decoupling **reasoning (thinking)** from **explanation**, we achieve state-of-the-art performance on the ViVQA-X benchmark.
+This study investigates an adaptation of Group Relative Policy Optimization (GRPO) for the Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) task. We propose a composite reward mechanism to decouple the generation process into distinct stages: Reasoning (Thinking), Conclusion, and Explanation. This structured approach aims to mitigate hallucinations by enforcing explicit reasoning steps before response synthesis. Experiments on the ViVQA-X benchmark indicate that this method improves performance compared to supervised fine-tuning baselines, specifically on the Vintern-3B backbone.
 
 <p align="center">
   <img src="assets/main_figure.jpg" width="100%" alt="Main Figure">
