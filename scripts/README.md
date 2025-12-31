@@ -1,80 +1,156 @@
-# VINLE-GRPO Scripts
+# VQA Evaluation Scripts
 
-Utility scripts for data preparation, inference, evaluation, and setup.
-
-## Directory Structure
-
-```
-scripts/
-├── data/           # Data preparation scripts
-├── inference/      # Inference testing scripts
-├── eval/           # Evaluation & metrics scripts
-└── setup/          # Environment setup scripts
-```
+Simple shell scripts for evaluating inference results.
 
 ## Quick Start
 
-### 1. Setup Environment
+### Method 1: Edit Configuration Variable (Recommended)
 
+1. Open the script file
+2. Edit the `FILES` variable at the top
+3. Run the script
+
+**Example:**
 ```bash
-bash scripts/setup/install_env.sh
-bash scripts/setup/setup_external.sh
+# 1. Edit eval_grpo.sh
+nano scripts/eval_grpo.sh
+
+# 2. Uncomment and edit FILES variable:
+FILES="v2-20251229-175222.json"
+
+# 3. Run the script
+./scripts/eval_grpo.sh
 ```
 
-### 2. Prepare Data
+### Method 2: Command Line Arguments
 
 ```bash
-python scripts/data/prepare_vivqa_sft.py
-python scripts/data/prepare_vivqa_grpo.py
+./scripts/eval_grpo.sh v2-20251229-175222.json
+./scripts/eval_oea.sh file1.json file2.json
 ```
 
-### 3. Run Inference
+### Method 3: Evaluate All Files (Default)
 
 ```bash
-# Run all inference modes (GRPO, OTA, OEA, Zero-shot)
-bash scripts/inference/run_all.sh 10
-
-# Or run individual modes
-bash scripts/inference/run_grpo.sh 10
-bash scripts/inference/run_ota.sh 10
-bash scripts/inference/run_oea.sh 10
-bash scripts/inference/run_zeroshot.sh 10
+./scripts/eval_grpo.sh  # Evaluates all files in outputs/inference/grpo/
 ```
 
-### 4. Run Evaluation
+## Available Scripts
+
+| Script | Format | Configuration Variable |
+|--------|--------|----------------------|
+| `eval_grpo.sh` | GRPO | `FILES="yourfile.json"` |
+| `eval_oea.sh` | OEA | `FILES="yourfile.json"` |
+| `eval_ota.sh` | OTA | `FILES="yourfile.json"` |
+| `eval_zeroshot.sh` | ZEROSHOT | `FILES="yourfile.json"` |
+| `eval_all.sh` | All formats | `OUTPUT_FILE="results.csv"` |
+
+## Configuration Examples
+
+### Single File
+Open `eval_grpo.sh` and edit:
+```bash
+# Uncomment this line:
+FILES="v2-20251229-175222.json"
+```
+
+### Multiple Files
+```bash
+# Uncomment and edit:
+FILES="checkpoint1.json checkpoint2.json checkpoint3.json"
+```
+
+### All Files
+```bash
+# Leave FILES empty (default):
+FILES=""
+```
+
+### Custom Output (eval_all.sh)
+```bash
+# Uncomment and edit:
+OUTPUT_FILE="my_comprehensive_results.csv"
+```
+
+## Full Example Workflow
 
 ```bash
-bash scripts/eval/run_evaluation.sh
+# 1. Navigate to repo
+cd /home/vlai-vqa-nle/minhtq/VINLE-GRPO
+
+# 2. Edit the script
+nano scripts/eval_grpo.sh
+
+# In the file, uncomment and edit:
+# FILES="v2-20251229-175222.json"
+
+# 3. Save and run
+./scripts/eval_grpo.sh
 ```
 
-## Detailed Documentation
+## Alternative: Direct Command Line
 
-### inference/
+If you prefer not to edit files:
 
-Individual scripts for each inference mode with auto-versioning:
+```bash
+# Single file
+./scripts/eval_grpo.sh v2-20251229-175222.json
 
-- `run_grpo.sh` - Full GRPO inference (R+C+E)
-- `run_ota.sh` - OTA ablation (R+C)
-- `run_oea.sh` - OEA ablation (C+E)
-- `run_zeroshot.sh` - Zero-shot baseline
-- `run_all.sh` - Run all modes sequentially
+# Multiple files
+./scripts/eval_oea.sh file1.json file2.json file3.json
 
-**Output**: `outputs/inference/{mode}/v{N}-{timestamp}.json`
+# All files
+./scripts/eval_ota.sh
 
-**Usage**: `bash scripts/inference/run_grpo.sh [NUM_SAMPLES]`
+# All formats with custom output
+./scripts/eval_all.sh my_results.csv
+```
 
-### eval/
+## Setup (First Time)
 
-- `run_evaluation.sh` - Run evaluation metrics on inference results
+```bash
+chmod +x scripts/*.sh
+```
 
-### data/
+## What Gets Evaluated
 
-- `prepare_vivqa_sft.py` - Prepare data for SFT training
-- `prepare_vivqa_grpo.py` - Prepare data for GRPO training  
-- `link_datasets.sh` - Create symlinks to datasets
+Each script automatically knows which folder to use:
 
-### setup/
+- `eval_grpo.sh` → `outputs/inference/grpo/`
+- `eval_oea.sh` → `outputs/inference/oea/`
+- `eval_ota.sh` → `outputs/inference/ota/`
+- `eval_zeroshot.sh` → `outputs/inference/zeroshot/`
+- `eval_all.sh` → All of the above (recursive)
 
-- `install_env.sh` - Install main environment
-- `install_env_eval.sh` - Install evaluation environment
-- `setup_external.sh` - Setup external dependencies
+## Output
+
+Results are saved as CSV with metrics:
+- Accuracy (overall and by answer type)
+- Explanation metrics (BLEU, METEOR, ROUGE, CIDEr, BERTScore)
+- Answer quality metrics (SMILE)
+
+## Tips
+
+1. **Easy editing**: Most users prefer Method 1 (edit FILES variable)
+2. **Quick testing**: Use Method 2 (command line) for one-off evaluations
+3. **Batch evaluation**: Use `eval_all.sh` to evaluate all formats at once
+4. **Compare checkpoints**: Set `FILES` to multiple filenames separated by spaces
+
+## Troubleshooting
+
+**Script not running?**
+```bash
+chmod +x scripts/eval_grpo.sh
+```
+
+**Wrong GPU?**
+Edit the script and change:
+```bash
+--device cuda:0  →  --device cuda:1
+```
+
+**File not found?**
+Make sure you're in the repo root:
+```bash
+cd /home/vlai-vqa-nle/minhtq/VINLE-GRPO
+```
