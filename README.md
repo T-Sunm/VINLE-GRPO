@@ -64,7 +64,7 @@ bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vin
 bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh
 ```
 
-> **For detailed training guide**, see [Training Documentation](external/ms-swift/examples/train/)
+> **For detailed training guide**, see [Training Documentation](docs/TRAINING.md)
 
 ### 4. Inference
 
@@ -140,7 +140,7 @@ VINLE-GRPO/
 
 | Component | Quick Example | Full Documentation |
 |:---:|:---:|:---:|
-| **Training** | `bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vinle_full.yaml` | [Training Guide](external/ms-swift/examples/train/) |
+| **Training** | `bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vinle_full.yaml` | [Training Guide](docs/TRAINING.md) |
 | **Inference** | `python -m src.inference.internvl_based.grpo --model <path>` | [Inference Guide](src/inference/) |
 | **Evaluation** | `python -m src.evaluation.calculate_scores --input-dir <path>` | [Evaluation Guide](src/evaluation/) |
 | **Scripts** | `bash scripts/eval_grpo.sh` | [Scripts Guide](scripts/) |
@@ -199,16 +199,18 @@ We provide **5 inference modes** for systematic evaluation:
 
 ---
 
+<!-- 
 ## Citation
 
 ```bibtex
-<!-- @inproceedings{vinle-grpo-2026,
+@inproceedings{vinle-grpo-2026,
   title={Enhancing Vietnamese VQA-NLE via Learning to Explain with GRPO},
   author={Tran, Quang-Minh and To, Phat-Dat},
   booktitle={Proceedings of ICISN 2026},
   year={2026}
-} -->
+}
 ```
+-->
 
 ---
 

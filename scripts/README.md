@@ -2,7 +2,17 @@
 
 Quick shell scripts for evaluating inference results.
 
----
+## Structure
+
+```
+scripts/
+├── eval_grpo.sh       # Evaluate GRPO outputs
+├── eval_ota.sh        # Evaluate OTA (Thinking+Answer)
+├── eval_oea.sh        # Evaluate OEA (Explanation+Answer)
+├── eval_zeroshot.sh   # Evaluate Zero-shot outputs
+├── eval_all.sh        # Evaluate ALL formats recursively
+└── setup/             # Environment setup scripts
+```
 
 ## Quick Start
 

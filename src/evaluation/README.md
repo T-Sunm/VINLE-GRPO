@@ -2,6 +2,21 @@
 
 Evaluate inference results using `calculate_scores.py`.
 
+## Structure
+
+```
+src/evaluation/
+├── calculate_scores.py       # Main CLI script
+├── core/
+│   ├── format_detector.py    # Auto-detects GRPO/OTA/OEA formats
+│   ├── shared_models.py      # Loads BERTScore & SMILE models
+│   └── text_preprocessing.py # Normalizes Vietnamese text
+└── metrics/
+    ├── vqa_accuracy.py       # Accuracy with flexible matching
+    ├── nlg_metrics.py        # BLEU, METEOR, ROUGE, CIDEr
+    └── smile_metrics.py      # SMILE metric wrapper
+```
+
 ## Usage
 
 ### 1. Basic Evaluation
@@ -45,18 +60,3 @@ python -m src.evaluation.calculate_scores \
 | `--cuda-device` | `0` | CUDA_VISIBLE_DEVICES ID |
 
 </div>
-
-## Structure
-
-```
-src/evaluation/
-├── calculate_scores.py       # Main CLI script
-├── core/
-│   ├── format_detector.py    # Auto-detects GRPO/OTA/OEA formats
-│   ├── shared_models.py      # Loads BERTScore & SMILE models
-│   └── text_preprocessing.py # Normalizes Vietnamese text
-└── metrics/
-    ├── vqa_accuracy.py       # Accuracy with flexible matching
-    ├── nlg_metrics.py        # BLEU, METEOR, ROUGE, CIDEr
-    └── smile_metrics.py      # SMILE metric wrapper
-```
