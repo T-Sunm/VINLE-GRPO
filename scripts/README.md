@@ -1,156 +1,124 @@
-# VQA Evaluation Scripts
+# Evaluation Scripts
 
-Simple shell scripts for evaluating inference results.
+Quick shell scripts for evaluating inference results.
+
+---
 
 ## Quick Start
 
+### Evaluate Single Format
+
+```bash
+# Edit FILES variable in script (recommended)
+nano scripts/eval_grpo.sh
+# Set: FILES="v2-20251229-175222.json"
+
+# Then run
+bash scripts/eval_grpo.sh
+```
+
+Or pass filenames directly:
+
+```bash
+bash scripts/eval_grpo.sh v2-20251229-175222.json
+```
+
+### Evaluate All Formats
+
+```bash
+bash scripts/eval_all.sh
+```
+
+---
+
+## Available Scripts
+
+| Script | Input Folder | Example |
+|--------|--------------|---------|
+| `eval_grpo.sh` | `outputs/inference/grpo/` | `bash scripts/eval_grpo.sh file.json` |
+| `eval_ota.sh` | `outputs/inference/ota/` | `bash scripts/eval_ota.sh file.json` |
+| `eval_oea.sh` | `outputs/inference/oea/` | `bash scripts/eval_oea.sh file.json` |
+| `eval_zeroshot.sh` | `outputs/inference/zeroshot/` | `bash scripts/eval_zeroshot.sh file.json` |
+| `eval_all.sh` | All formats (recursive) | `bash scripts/eval_all.sh output.csv` |
+
+---
+
+## Usage Methods
+
 ### Method 1: Edit Configuration Variable (Recommended)
 
-1. Open the script file
-2. Edit the `FILES` variable at the top
-3. Run the script
-
-**Example:**
 ```bash
-# 1. Edit eval_grpo.sh
+# 1. Edit script
 nano scripts/eval_grpo.sh
 
-# 2. Uncomment and edit FILES variable:
+# 2. Uncomment and set FILES
 FILES="v2-20251229-175222.json"
 
-# 3. Run the script
-./scripts/eval_grpo.sh
+# 3. Run
+bash scripts/eval_grpo.sh
 ```
 
 ### Method 2: Command Line Arguments
 
 ```bash
-./scripts/eval_grpo.sh v2-20251229-175222.json
-./scripts/eval_oea.sh file1.json file2.json
+# Single file
+bash scripts/eval_grpo.sh file1.json
+
+# Multiple files
+bash scripts/eval_grpo.sh file1.json file2.json file3.json
+
+# All files (default)
+bash scripts/eval_grpo.sh
 ```
 
-### Method 3: Evaluate All Files (Default)
-
-```bash
-./scripts/eval_grpo.sh  # Evaluates all files in outputs/inference/grpo/
-```
-
-## Available Scripts
-
-| Script | Format | Configuration Variable |
-|--------|--------|----------------------|
-| `eval_grpo.sh` | GRPO | `FILES="yourfile.json"` |
-| `eval_oea.sh` | OEA | `FILES="yourfile.json"` |
-| `eval_ota.sh` | OTA | `FILES="yourfile.json"` |
-| `eval_zeroshot.sh` | ZEROSHOT | `FILES="yourfile.json"` |
-| `eval_all.sh` | All formats | `OUTPUT_FILE="results.csv"` |
+---
 
 ## Configuration Examples
 
 ### Single File
-Open `eval_grpo.sh` and edit:
 ```bash
-# Uncomment this line:
 FILES="v2-20251229-175222.json"
 ```
 
 ### Multiple Files
 ```bash
-# Uncomment and edit:
 FILES="checkpoint1.json checkpoint2.json checkpoint3.json"
 ```
 
-### All Files
+### All Files (Default)
 ```bash
-# Leave FILES empty (default):
-FILES=""
+FILES=""  # Leave empty
 ```
 
-### Custom Output (eval_all.sh)
-```bash
-# Uncomment and edit:
-OUTPUT_FILE="my_comprehensive_results.csv"
-```
+---
 
-## Full Example Workflow
+## Output
 
-```bash
-# 1. Navigate to repo
-cd /home/vlai-vqa-nle/minhtq/VINLE-GRPO
+Results saved as CSV with metrics:
+- **Accuracy** (overall + by answer type: yes/no, number, other)
+- **NLG Metrics** (BLEU, METEOR, ROUGE, CIDEr, BERTScore)
+- **SMILE** (avg + harmonic mean)
 
-# 2. Edit the script
-nano scripts/eval_grpo.sh
+---
 
-# In the file, uncomment and edit:
-# FILES="v2-20251229-175222.json"
+## Tips
 
-# 3. Save and run
-./scripts/eval_grpo.sh
-```
+- **Easy editing**: Edit `FILES` variable in script
+- **Quick testing**: Pass filenames as arguments
+- **Batch evaluation**: Use `eval_all.sh` for all formats
+- **GPU selection**: Edit `--device cuda:0` in script
 
-## Alternative: Direct Command Line
+---
 
-If you prefer not to edit files:
+## Troubleshooting
 
-```bash
-# Single file
-./scripts/eval_grpo.sh v2-20251229-175222.json
-
-# Multiple files
-./scripts/eval_oea.sh file1.json file2.json file3.json
-
-# All files
-./scripts/eval_ota.sh
-
-# All formats with custom output
-./scripts/eval_all.sh my_results.csv
-```
-
-## Setup (First Time)
-
+**Script not executable?**
 ```bash
 chmod +x scripts/*.sh
 ```
 
-## What Gets Evaluated
-
-Each script automatically knows which folder to use:
-
-- `eval_grpo.sh` → `outputs/inference/grpo/`
-- `eval_oea.sh` → `outputs/inference/oea/`
-- `eval_ota.sh` → `outputs/inference/ota/`
-- `eval_zeroshot.sh` → `outputs/inference/zeroshot/`
-- `eval_all.sh` → All of the above (recursive)
-
-## Output
-
-Results are saved as CSV with metrics:
-- Accuracy (overall and by answer type)
-- Explanation metrics (BLEU, METEOR, ROUGE, CIDEr, BERTScore)
-- Answer quality metrics (SMILE)
-
-## Tips
-
-1. **Easy editing**: Most users prefer Method 1 (edit FILES variable)
-2. **Quick testing**: Use Method 2 (command line) for one-off evaluations
-3. **Batch evaluation**: Use `eval_all.sh` to evaluate all formats at once
-4. **Compare checkpoints**: Set `FILES` to multiple filenames separated by spaces
-
-## Troubleshooting
-
-**Script not running?**
-```bash
-chmod +x scripts/eval_grpo.sh
-```
-
-**Wrong GPU?**
-Edit the script and change:
-```bash
---device cuda:0  →  --device cuda:1
-```
-
 **File not found?**
-Make sure you're in the repo root:
 ```bash
+# Make sure you're in repo root
 cd /home/vlai-vqa-nle/minhtq/VINLE-GRPO
 ```
