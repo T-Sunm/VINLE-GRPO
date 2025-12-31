@@ -33,6 +33,8 @@ bash scripts/eval_all.sh
 
 ## Available Scripts
 
+<div align="center">
+
 | Script | Input Folder | Example |
 |:---:|:---:|:---:|
 | `eval_grpo.sh` | `outputs/inference/grpo/` | `bash scripts/eval_grpo.sh file.json` |
@@ -40,6 +42,8 @@ bash scripts/eval_all.sh
 | `eval_oea.sh` | `outputs/inference/oea/` | `bash scripts/eval_oea.sh file.json` |
 | `eval_zeroshot.sh` | `outputs/inference/zeroshot/` | `bash scripts/eval_zeroshot.sh file.json` |
 | `eval_all.sh` | All formats (recursive) | `bash scripts/eval_all.sh output.csv` |
+
+</div>
 
 ---
 

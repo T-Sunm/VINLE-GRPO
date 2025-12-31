@@ -28,6 +28,8 @@ src/inference/
 
 ## Inference Types (Our Methods)
 
+<div align="center">
+
 | Mode | Tags | Description | Use Case |
 |:---:|:---:|:---:|:---:|
 | `grpo` | R+C+E | Full GRPO method | **Our main contribution** |
@@ -35,6 +37,8 @@ src/inference/
 | `oea` | C+E | Only Explanation + Answer | Ablation: No reasoning reward |
 | `sft` | C+E | Supervised fine-tuning | Baseline comparison |
 | `zero_shot` | R+C+E | Base model | Baseline comparison |
+
+</div>
 
 *(R=REASONING, C=CONCLUSION, E=EXPLANATION)*
 

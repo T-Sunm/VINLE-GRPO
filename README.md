@@ -17,11 +17,15 @@ We introduce a novel approach to improve Vietnamese Visual Question Answering wi
 
 ### Key Results
 
+<div align="center">
+
 | Method | Backbone | Acc ↑ | SMILE ↑ | BS ↑ |
 |:---:|:---:|:---:|:---:|:---:|
 | Base (Zero-shot) | Vintern-3B | 54.83 | 56.00 | 51.90 |
 | SFT | Vintern-3B | 46.60 | 51.45 | 53.69 |
 | **GRPO (Ours)** | **Vintern-3B** | **62.65** | **60.42** | **52.81** |
+
+</div>
 
 ---
 
@@ -132,6 +136,7 @@ VINLE-GRPO/
 ---
 
 ## Detailed Documentation
+<div align="center">
 
 | Component | Quick Example | Full Documentation |
 |:---:|:---:|:---:|
@@ -140,11 +145,15 @@ VINLE-GRPO/
 | **Evaluation** | `python -m src.evaluation.calculate_scores --input-dir <path>` | [Evaluation Guide](src/evaluation/) |
 | **Scripts** | `bash scripts/eval_grpo.sh` | [Scripts Guide](scripts/) |
 
+</div>
+
 ---
 
 ## Inference Modes
 
 We provide **5 inference modes** for systematic evaluation:
+
+<div align="center">
 
 | Mode | Tags | Description | Script |
 |:---:|:---:|:---:|:---:|
@@ -153,6 +162,8 @@ We provide **5 inference modes** for systematic evaluation:
 | **OEA** | C+E | Ablation: Only Explanation + Answer | `src.inference.internvl_based.oea` |
 | **SFT** | C+E | Supervised fine-tuning baseline | `src.inference.internvl_based.sft` |
 | **Zero-shot** | R+C+E | Base model baseline | `src.inference.internvl_based.zero_shot` |
+
+</div>
 
 *(R=REASONING, C=CONCLUSION, E=EXPLANATION)*
 
@@ -163,6 +174,7 @@ We provide **5 inference modes** for systematic evaluation:
 ## Main Results
 
 ### ViVQA-X Test Set
+<div align="center">
 
 | Method | Backbone | Acc ↑ | SMILE ↑ | BS ↑ |
 |:---:|:---:|:---:|:---:|:---:|
@@ -171,13 +183,19 @@ We provide **5 inference modes** for systematic evaluation:
 | GRPO (DeepSeek) | Vintern-3B | 56.15 | 57.07 | 52.20 |
 | **GRPO (Ours)** | **Vintern-3B** | **62.65** | **60.42** | **52.81** |
 
+</div>
+
 ### Ablation Study
+
+<div align="center">
 
 | Method | Acc ↑ | SMILE ↑ | BS ↑ |
 |:---:|:---:|:---:|:---:|
 | GRPO (Full) | **62.7** | **60.4** | **52.8** |
 | w/o Reasoning | 42.8 | 54.7 | 53.9 |
 | w/o Explanation | 47.4 | 56.7 | 50.7 |
+
+</div>
 
 ---
 

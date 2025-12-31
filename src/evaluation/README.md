@@ -33,6 +33,8 @@ python -m src.evaluation.calculate_scores \
 
 ## Arguments
 
+<div align="center">
+
 | Argument | Default | Description |
 |:---:|:---:|:---:|
 | `--input-dir` | `outputs/inference` | Directory containing JSON files |
@@ -41,6 +43,8 @@ python -m src.evaluation.calculate_scores \
 | `--output-file` | auto | Output CSV filename |
 | `--device` | `cuda:0` | GPU device for models |
 | `--cuda-device` | `0` | CUDA_VISIBLE_DEVICES ID |
+
+</div>
 
 ## Structure
 
