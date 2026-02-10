@@ -8,13 +8,13 @@ model:
   
 # Data Configuration
 data:
-  train_dataset: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/data/processed/grpo/ViVQA-X_train_grpo.jsonl"
+  train_dataset: "${PROJECT_ROOT}/data/processed/grpo/ViVQA-X_train_grpo.jsonl"
   max_length: 4096
   max_completion_length: 1024
   
 # Reward Configuration
 rewards:
-  plugin_path: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/external/ms-swift/examples/train/grpo/plugin/plugin.py"
+  plugin_path: "${PROJECT_ROOT}/external/ms-swift/examples/train/grpo/plugin/plugin.py"
   functions:
     - vinle_format
     - vinle_accuracy
@@ -39,7 +39,7 @@ training:
   
   # Optimization
   num_train_epochs: 2
-  max_steps: 
+  max_steps: 4000
   per_device_train_batch_size: 2
   per_device_eval_batch_size: 4
   gradient_accumulation_steps: 4
@@ -72,12 +72,12 @@ training:
   
 # Output Configuration
 output:
-  dir: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/outputs/training/grpo/vinle_full/"
+  dir: "${PROJECT_ROOT}/outputs/training/grpo/vinle_full/"
   resume_from_checkpoint: null  # Path to checkpoint or null
   
 # Environment
 environment:
-  cuda_visible_devices: "2"
+  cuda_visible_devices: "0"
   pytorch_cuda_alloc_conf: "expandable_segments:True"
   hf_endpoint: "https://huggingface.co"
   use_vllm: false

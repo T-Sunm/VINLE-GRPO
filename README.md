@@ -15,8 +15,6 @@ This study investigates an adaptation of Group Relative Policy Optimization (GRP
   <img src="assets/main_figure.jpg" width="100%" alt="Main Figure">
 </p>
 
-
-
 ---
 
 ## Quick Start
@@ -28,35 +26,65 @@ git clone https://github.com/T-Sunm/VINLE-GRPO.git
 cd VINLE-GRPO
 git submodule update --init --recursive
 
-# Create environment
-conda create -n vqa-nle python=3.10 -y
-conda activate vqa-nle
-bash scripts/setup/install_env.sh
+# Create environment (Python 3.11 recommended)
+conda create -n vqa-nle-swift python=3.11 -y
+conda activate vqa-nle-swift
+
+# Install dependencies + ms-swift
+bash install_env.sh
+
+# Setup Weights & Biases (for training logging)
+export WANDB_ENTITY=<team-name>    # Create team at https://wandb.ai → Teams → Create
+export WANDB_PROJECT=vinle_grpo
 ```
+
+> **Note:** All paths are auto-detected from the project root. No manual path configuration needed.
 
 ### 2. Prepare Data
 
 ```bash
-# Configure paths in .env
-cp .env.example .env
-
 # Generate GRPO training data
 python -m src.data.dataset_loader --mode grpo --split train
 ```
 
-### 3. Train
+### 3. Train (GRPO)
+
+All training parameters are configured via YAML files in `configs/grpo/`. Edit the YAML file to change GPU, steps, batch size, etc.
 
 ```bash
 # Full GRPO method (our method)
-bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vinle_full.yaml
+bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh \
+    configs/grpo/vinle_full.yaml
 
-# After training, merge LoRA weights
-bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh
+# Ablation: Reasoning + Conclusion only (no Explanation)
+bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh \
+    configs/grpo/ablation_think_answer.yaml
 ```
 
-> **For detailed training guide**, see [Training Documentation](docs/TRAINING.md)
+**Key config options** (in `configs/grpo/vinle_full.yaml`):
+```yaml
+training:
+  max_steps: 4000           # Total training steps
+  per_device_train_batch_size: 2
+  learning_rate: 1.0e-5
+environment:
+  cuda_visible_devices: "0"  # Which GPU to use
+```
 
-### 4. Inference
+### 4. Merge LoRA Weights
+
+After training, merge LoRA adapter into base model:
+
+```bash
+bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh \
+    <path_to_checkpoint>
+
+# Example:
+bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh \
+    outputs/training/grpo/vinle_full/v2-20260211-010253/checkpoint-4000
+```
+
+### 5. Inference
 
 ```bash
 # Run GRPO inference
@@ -67,26 +95,19 @@ python -m src.inference.internvl_based.grpo \
 
 > **For all inference modes (GRPO, OTA, OEA, SFT, Zero-shot)**, see [Inference Documentation](src/inference/)
 
-### 5. Evaluation
-
-**Recommended: Use Helper Scripts**
+### 6. Evaluation
 
 ```bash
-# Quick evaluation (GRPO)
+# Quick evaluation
 bash scripts/eval_grpo.sh 
-```
 
-> **For detailed usage of evaluation scripts**, see [Scripts Documentation](scripts/)
-
-**Manual Method:**
-
-```bash
+# Manual method
 python -m src.evaluation.calculate_scores \
     --input-dir outputs/inference/grpo \
     --device cuda:0
 ```
 
-> **For internal evaluation pipeline details**, see [Evaluation Documentation](src/evaluation/)
+> **For detailed evaluation**, see [Evaluation Documentation](src/evaluation/)
 
 ---
 
@@ -94,36 +115,37 @@ python -m src.evaluation.calculate_scores \
 
 ```
 VINLE-GRPO/
+├── configs/               # ⭐ YAML configurations (edit these!)
+│   ├── grpo/
+│   │   ├── vinle_full.yaml              # Full method config
+│   │   └── ablation_think_answer.yaml   # Ablation config
+│   └── sft/
+│       └── baseline.yaml                # SFT baseline config
+│
 ├── src/                    # Research code
-│   ├── data/              # Dataset preparation → See README in folder
+│   ├── data/              # Dataset preparation
 │   ├── rewards/           # Custom reward functions
-│   ├── inference/         # Inference scripts → See README in folder
-│   ├── evaluation/        # Evaluation pipeline → See README in folder
+│   ├── inference/         # Inference scripts
+│   ├── evaluation/        # Evaluation pipeline
 │   └── utils/             # Shared utilities
 │
-├── external/              # External dependencies (isolated)
-│   ├── ms-swift/         # GRPO training framework → See docs/README.md
+├── external/              # External dependencies
+│   ├── ms-swift/         # GRPO training framework
 │   └── smile-metric/     # SMILE evaluation metric
 │
-├── configs/              # YAML configurations
-│   ├── grpo/            # GRPO experiments
-│   └── sft/             # SFT baseline
+├── scripts/              # Helper scripts
+│   ├── inference/        # run_grpo.sh, run_ota.sh, run_oea.sh
+│   └── setup/            # Environment setup
 │
-├── scripts/              # Executable scripts → See README in folder
-│   ├── data/            # Data preparation
-│   ├── eval/            # Evaluation helpers
-│   └── setup/           # Environment setup
+├── outputs/              # Results (gitignored)
+│   ├── training/        # Model checkpoints
+│   └── inference/       # Inference results
 │
-├── outputs/             # Results (gitignored)
-│   ├── training/       # Model checkpoints
-│   └── inference/      # Inference results
-│
-└── notebooks/          # Analysis notebooks
+├── install_env.sh        # Environment setup script
+└── requirements.txt      # Python dependencies
 ```
 
 ---
-
-
 
 ## Inference Modes
 
@@ -197,5 +219,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <br>
 
-**Last Updated**: 2025-12-31  
-**Version**: 2.0 (Streamlined)
+**Last Updated**: 2026-02-11  
+**Version**: 2.1

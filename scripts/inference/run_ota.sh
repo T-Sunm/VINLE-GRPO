@@ -6,7 +6,8 @@ set -e
 cd "$(dirname "$0")/../.."
 
 NUM_SAMPLES=${1:-3}
-MODEL="/home/vlai-vqa-nle/minhtq/vqa-nle/ms-swift/examples/train/grpo/output/only_think_answer/v2-20251220-212353/checkpoint-1000-merged"
+# TODO: Update MODEL to your trained & merged checkpoint path
+MODEL="${OTA_MODEL_PATH:-outputs/training/grpo/ablation_think_answer/checkpoint-merged}"
 OUTPUT_DIR="outputs/inference/ota"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 

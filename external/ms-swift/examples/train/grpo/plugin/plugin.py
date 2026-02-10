@@ -26,9 +26,25 @@ from outcome_rewards import CaptionRewardScorer
 from length_rewards import length_penalty_answer, length_penalty_explanation
 from reasoning_rewards import ReasoningRewardScorer
 
-# Add VINLE-GRPO src to path for reward functions
+# Auto-detect PROJECT_ROOT from file location
 import sys
-vinle_src_path = '/home/vlai-vqa-nle/minhtq/VINLE-GRPO/src'
+import os
+from pathlib import Path
+
+def _get_project_root():
+    """Auto-detect VINLE-GRPO project root.
+    Priority: 1) VINLE_PROJECT_ROOT env var  2) Auto-detect from __file__
+    """
+    env_root = os.environ.get('VINLE_PROJECT_ROOT')
+    if env_root:
+        return Path(env_root)
+    # This file is at: external/ms-swift/examples/train/grpo/plugin/plugin.py
+    # Navigate 6 parent dirs up to reach project root
+    return Path(__file__).resolve().parents[6]
+
+PROJECT_ROOT = _get_project_root()
+
+vinle_src_path = str(PROJECT_ROOT / 'src')
 if vinle_src_path not in sys.path:
     sys.path.insert(0, vinle_src_path)
 
@@ -189,8 +205,8 @@ def initialize_caption_customized_scorer():
 
         caption_scorer = CaptionRewardScorer(
             model_name_or_path="bert",
-            coco_train_path="/home/vlai-vqa-nle/minhtq/vqa-nle/data/processed/coco/coco_train2014_with_captions.json",
-            coco_val_path="/home/vlai-vqa-nle/minhtq/vqa-nle/data/processed/coco/coco_val2014_with_captions.json"
+            coco_train_path=str(PROJECT_ROOT / 'data' / 'processed' / 'coco' / 'coco_train2014_with_captions.json'),
+            coco_val_path=str(PROJECT_ROOT / 'data' / 'processed' / 'coco' / 'coco_val2014_with_captions.json')
         )
         print("CaptionRewardScorer initialized successfully!")
     return caption_scorer

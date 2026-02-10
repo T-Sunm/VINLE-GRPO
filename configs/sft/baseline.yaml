@@ -5,7 +5,7 @@
 #   bash external/ms-swift/examples/train/sft/run_sft.sh \
 #       configs/sft/baseline.yaml
 
-# Model Configuration
+# Model Configuration: "OpenGVLab/InternVL3_5-2B"
 model:
   id_or_path: "OpenGVLab/InternVL3_5-2B"
   type: "internvl3"
@@ -13,7 +13,7 @@ model:
 # Data Configuration
 data:
   # Absolute path for SFT data
-  train_dataset: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/data/processed/grpo/ViVQA-X_train_sft.jsonl"
+  train_dataset: "${PROJECT_ROOT}/data/processed/sft/ViVQA-X_train_sft.jsonl"
   max_length: 4096
   
 # Training Configuration
@@ -26,7 +26,8 @@ training:
   
   # Optimization
   num_train_epochs: 3
-  per_device_train_batch_size: 4
+  max_steps: 4000
+  per_device_train_batch_size: 2
   gradient_accumulation_steps: 2
   learning_rate: 5.0e-5
   warmup_ratio: 0.03
@@ -58,11 +59,11 @@ training:
 # Output Configuration
 output:
   # Absolute path
-  dir: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/output/sft/baseline"
+  dir: "${PROJECT_ROOT}/outputs/training/sft/baseline"
   resume_from_checkpoint: null
   
 # Environment
 environment:
-  cuda_visible_devices: "2"
+  cuda_visible_devices: "1"
   pytorch_cuda_alloc_conf: "expandable_segments:True"
   hf_endpoint: "https://huggingface.co"

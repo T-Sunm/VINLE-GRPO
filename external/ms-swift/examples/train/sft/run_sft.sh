@@ -1,141 +1,130 @@
 #!/bin/bash
 # SFT Training Script - Reads from YAML config
 # 
-# Usage:
-#   bash run_sft.sh [config_file]
-#   bash run_sft.sh ../../../../configs/sft/baseline.yaml
-#
-# If no config specified, uses default paths below
+# Usage (run from project root):
+#   bash external/ms-swift/examples/train/sft/run_sft.sh configs/sft/baseline.yaml
 
 set -e
 
-# Get config file from argument or use inline defaults
-CONFIG_FILE="${1:-}"
+# ============================================================
+# Auto-detect PROJECT_ROOT
+# ============================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Script is at: external/ms-swift/examples/train/sft/
+AUTO_PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
+PROJECT_ROOT="${VINLE_PROJECT_ROOT:-$AUTO_PROJECT_ROOT}"
+export PROJECT_ROOT
 
-if [ -n "$CONFIG_FILE" ]; then
-    echo "=========================================="
-    echo "Loading SFT config from: $CONFIG_FILE"
-    echo "=========================================="
-    
-    # Parse YAML using Python
-    eval $(python3 - <<EOF
-import yaml
-import sys
+if [ ! -f "$PROJECT_ROOT/README.md" ] || [ ! -d "$PROJECT_ROOT/configs" ]; then
+    echo "ERROR: Could not detect project root. Set VINLE_PROJECT_ROOT env var."
+    echo "  Detected: $PROJECT_ROOT"
+    exit 1
+fi
+echo "Project Root: $PROJECT_ROOT"
+
+# ============================================================
+# Config file (required)
+# ============================================================
+CONFIG_FILE="${1:-}"
+if [ -z "$CONFIG_FILE" ]; then
+    echo ""
+    echo "ERROR: Config file is required."
+    echo "Usage: bash run_sft.sh <config.yaml>"
+    echo ""
+    echo "Available configs:"
+    find "$PROJECT_ROOT/configs/sft" -name "*.yaml" 2>/dev/null | sort
+    exit 1
+fi
+
+echo "Loading config: $CONFIG_FILE"
+echo ""
+
+# ============================================================
+# Parse YAML config
+# ============================================================
+eval $(python3 - <<EOF
+import yaml, os, sys
 
 try:
     with open('$CONFIG_FILE', 'r') as f:
-        config = yaml.safe_load(f)
+        content = f.read()
+    content = content.replace('\${PROJECT_ROOT}', os.environ.get('PROJECT_ROOT', ''))
+    config = yaml.safe_load(content)
     
+    def v(val, default):
+        """Return default if val is None."""
+        return default if val is None else val
+
     # Environment
     env = config.get('environment', {})
-    print(f"export CUDA_VISIBLE_DEVICES='{env.get('cuda_visible_devices', '2')}'")
-    print(f"export PYTORCH_CUDA_ALLOC_CONF='{env.get('pytorch_cuda_alloc_conf', 'expandable_segments:True')}'")
-    print(f"export HF_ENDPOINT='{env.get('hf_endpoint', 'https://huggingface.co')}'")
-    
+    print(f"export CUDA_VISIBLE_DEVICES='{v(env.get('cuda_visible_devices'), '0')}'")
+    print(f"export PYTORCH_CUDA_ALLOC_CONF='{v(env.get('pytorch_cuda_alloc_conf'), 'expandable_segments:True')}'")
+    print(f"export HF_ENDPOINT='{v(env.get('hf_endpoint'), 'https://huggingface.co')}'")
+
     # Model
     model = config.get('model', {})
-    print(f"MODEL_TYPE='{model.get('type', 'internvl3')}'")
-    print(f"MODEL_PATH='{model.get('id_or_path', 'OpenGVLab/InternVL3_5-2B')}'")
-    
+    print(f"MODEL_TYPE='{v(model.get('type'), 'internvl3')}'")
+    print(f"MODEL_PATH='{v(model.get('id_or_path'), 'OpenGVLab/InternVL3_5-2B')}'")
+
     # Data
     data = config.get('data', {})
-    print(f"TRAIN_DATASET='{data.get('train_dataset', '')}'")
-    print(f"MAX_LENGTH={data.get('max_length', 4096)}")
-    
+    print(f"TRAIN_DATASET='{v(data.get('train_dataset'), '')}'")
+    print(f"MAX_LENGTH={v(data.get('max_length'), 4096)}")
+
     # Training
     train = config.get('training', {})
-    print(f"TRAIN_TYPE='{train.get('train_type', 'lora')}'")
-    print(f"LORA_RANK={train.get('lora_rank', 32)}")
-    print(f"LORA_ALPHA={train.get('lora_alpha', 64)}")
-    print(f"TARGET_MODULES='{train.get('target_modules', 'all-linear')}'")
-    print(f"FREEZE_VIT={train.get('freeze_vit', True)}")
-    print(f"NUM_EPOCHS={train.get('num_train_epochs', 3)}")
-    print(f"BATCH_SIZE={train.get('per_device_train_batch_size', 4)}")
-    print(f"GRAD_ACCUM={train.get('gradient_accumulation_steps', 2)}")
-    print(f"LR={train.get('learning_rate', 5e-5)}")
-    print(f"WARMUP_RATIO={train.get('warmup_ratio', 0.03)}")
-    print(f"SAVE_STEPS={train.get('save_steps', 100)}")
-    print(f"LOGGING_STEPS={train.get('logging_steps', 10)}")
-    print(f"EVAL_STEPS={train.get('eval_steps', 100)}")
-    print(f"SAVE_LIMIT={train.get('save_total_limit', 3)}")
-    print(f"TORCH_DTYPE='{train.get('torch_dtype', 'bfloat16')}'")
-    print(f"ATTN_IMPL='{train.get('attn_impl', 'flash_attention_2')}'")
-    print(f"WORKERS={train.get('dataloader_num_workers', 8)}")
-    print(f"DATASET_PROC={train.get('dataset_num_proc', 8)}")
-    print(f"QUANT_METHOD='{train.get('quant_method', 'bnb')}'")
-    print(f"QUANT_BITS={train.get('quant_bits', 4)}")
-    
+    print(f"TRAIN_TYPE='{v(train.get('train_type'), 'lora')}'")
+    print(f"LORA_RANK={v(train.get('lora_rank'), 32)}")
+    print(f"LORA_ALPHA={v(train.get('lora_alpha'), 64)}")
+    print(f"TARGET_MODULES='{v(train.get('target_modules'), 'all-linear')}'")
+    print(f"FREEZE_VIT={v(train.get('freeze_vit'), True)}")
+    print(f"NUM_EPOCHS={v(train.get('num_train_epochs'), 3)}")
+    max_steps = train.get('max_steps')
+    print(f"MAX_STEPS={max_steps if max_steps is not None else ''}")
+    print(f"BATCH_SIZE={v(train.get('per_device_train_batch_size'), 4)}")
+    print(f"GRAD_ACCUM={v(train.get('gradient_accumulation_steps'), 2)}")
+    print(f"LR={v(train.get('learning_rate'), 5e-5)}")
+    print(f"WARMUP_RATIO={v(train.get('warmup_ratio'), 0.03)}")
+    print(f"SAVE_STEPS={v(train.get('save_steps'), 100)}")
+    print(f"LOGGING_STEPS={v(train.get('logging_steps'), 10)}")
+    print(f"EVAL_STEPS={v(train.get('eval_steps'), 100)}")
+    print(f"SAVE_LIMIT={v(train.get('save_total_limit'), 3)}")
+    print(f"TORCH_DTYPE='{v(train.get('torch_dtype'), 'bfloat16')}'")
+    print(f"ATTN_IMPL='{v(train.get('attn_impl'), 'flash_attention_2')}'")
+    print(f"WORKERS={v(train.get('dataloader_num_workers'), 8)}")
+    print(f"DATASET_PROC={v(train.get('dataset_num_proc'), 8)}")
+    print(f"QUANT_METHOD='{v(train.get('quant_method'), 'bnb')}'")
+    print(f"QUANT_BITS={v(train.get('quant_bits'), 4)}")
+
     # Output
     output = config.get('output', {})
-    print(f"OUTPUT_DIR='{output.get('dir', '')}'")
-    resume = output.get('resume_from_checkpoint', '')
+    print(f"OUTPUT_DIR='{v(output.get('dir'), '')}'")
+    resume = output.get('resume_from_checkpoint')
     print(f"RESUME_CHECKPOINT='{resume if resume else ''}'")
-    
+
 except Exception as e:
     print(f"echo 'Error parsing YAML: {e}'", file=sys.stderr)
     sys.exit(1)
 EOF
 )
-    
-    echo "Config loaded successfully"
-    echo ""
-else
-    echo "=========================================="
-    echo "No config file - using defaults"
-    echo "=========================================="
-    echo ""
-    
-    # Default configuration
-    export HF_ENDPOINT="https://huggingface.co"
-    export CUDA_VISIBLE_DEVICES=2
-    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-    
-    MODEL_TYPE="internvl3"
-    MODEL_PATH="OpenGVLab/InternVL3_5-2B"
-    TRAIN_DATASET="/path/to/ViVQA-X_train_sft.jsonl"
-    OUTPUT_DIR="/path/to/output/sft"
-    
-    MAX_LENGTH=4096
-    TRAIN_TYPE="lora"
-    LORA_RANK=32
-    LORA_ALPHA=64
-    TARGET_MODULES="all-linear"
-    FREEZE_VIT=True
-    
-    NUM_EPOCHS=3
-    BATCH_SIZE=4
-    GRAD_ACCUM=2
-    LR=5e-5
-    WARMUP_RATIO=0.03
-    
-    SAVE_STEPS=100
-    LOGGING_STEPS=10
-    EVAL_STEPS=100
-    SAVE_LIMIT=3
-    
-    TORCH_DTYPE="bfloat16"
-    ATTN_IMPL="flash_attention_2"
-    WORKERS=8
-    DATASET_PROC=8
-    
-    QUANT_METHOD="bnb"
-    QUANT_BITS=4
-    
-    RESUME_CHECKPOINT=""
-fi
 
-# Print configuration
+# ============================================================
+# Print summary
+# ============================================================
 echo "=========================================="
 echo "SFT Training Configuration:"
 echo "=========================================="
-echo "Model: $MODEL_TYPE - $MODEL_PATH"
-echo "Dataset: $TRAIN_DATASET"
-echo "Output: $OUTPUT_DIR"
-echo "GPU: $CUDA_VISIBLE_DEVICES"
+echo "Model:    $MODEL_TYPE - $MODEL_PATH"
+echo "Dataset:  $TRAIN_DATASET"
+echo "Output:   $OUTPUT_DIR"
+echo "GPU:      $CUDA_VISIBLE_DEVICES"
+echo "Steps:    ${MAX_STEPS:-all epochs ($NUM_EPOCHS)}"
 echo "=========================================="
 echo ""
 
-# Build swift sft command
+# ============================================================
+# Build and run swift command
+# ============================================================
 CMD="swift sft \
     --use_hf true \
     --model $MODEL_PATH \
@@ -161,6 +150,7 @@ CMD="swift sft \
     --output_dir $OUTPUT_DIR \
     --warmup_ratio $WARMUP_RATIO \
     --dataloader_num_workers $WORKERS \
+    --dataset_num_proc $DATASET_PROC \
     --quant_method $QUANT_METHOD \
     --quant_bits $QUANT_BITS \
     --bnb_4bit_compute_dtype bfloat16 \
@@ -168,17 +158,13 @@ CMD="swift sft \
     --gradient_checkpointing true \
     --report_to wandb"
 
-# Add freeze_vit if needed
+# Optional args
 if [ "$FREEZE_VIT" = "True" ] || [ "$FREEZE_VIT" = "true" ]; then
     CMD="$CMD --freeze_vit true"
 fi
+[ -n "$MAX_STEPS" ] && CMD="$CMD --max_steps $MAX_STEPS"
+[ -n "$RESUME_CHECKPOINT" ] && CMD="$CMD --resume_from_checkpoint $RESUME_CHECKPOINT"
 
-# Add resume checkpoint if specified
-if [ -n "$RESUME_CHECKPOINT" ]; then
-    CMD="$CMD --resume_from_checkpoint $RESUME_CHECKPOINT"
-fi
-
-# Execute
 echo "Starting SFT training..."
 echo ""
 eval $CMD

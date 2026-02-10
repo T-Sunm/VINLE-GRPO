@@ -17,6 +17,19 @@ warnings.filterwarnings("ignore", category=UserWarning, module='transformers.mod
 
 import py_vncorenlp
 
+# Auto-detect PROJECT_ROOT from file location
+from pathlib import Path as _Path
+
+def _get_project_root():
+    """Auto-detect VINLE-GRPO project root."""
+    _env_root = os.environ.get('VINLE_PROJECT_ROOT')
+    if _env_root:
+        return _Path(_env_root)
+    # This file is at: external/ms-swift/examples/train/grpo/plugin/
+    return _Path(__file__).resolve().parents[6]
+
+_PROJECT_ROOT = _get_project_root()
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
@@ -26,12 +39,12 @@ def get_segmenter():
     """Lazy initialization của VnCoreNLP segmenter - chỉ load khi cần."""
     global _rdrsegmenter
     if _rdrsegmenter is None:
-        vncorenlp_dir = '/home/vlai-vqa-nle/minhtq/vqa-nle/vncorenlp_models'
+        vncorenlp_dir = str(_PROJECT_ROOT / 'models' / 'vncorenlp_models')
         if not os.path.exists(vncorenlp_dir):
             os.makedirs(vncorenlp_dir)
         _rdrsegmenter = py_vncorenlp.VnCoreNLP(
             annotators=["wseg"], 
-            save_dir='/home/vlai-vqa-nle/minhtq/vqa-nle/src/inference/vncorenlp_models'
+            save_dir=vncorenlp_dir
         )
     return _rdrsegmenter
 

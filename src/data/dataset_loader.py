@@ -133,6 +133,8 @@ def load_vivqa_for_grpo(
             
             # Extract explanation
             if isinstance(explanations, list) and len(explanations) > 0:
+                if not explanations[0]:  # Skip empty first explanation
+                    continue
                 explanation = explanations[0]
             elif isinstance(explanations, str):
                 explanation = explanations
@@ -145,25 +147,43 @@ def load_vivqa_for_grpo(
             # Format user content
             user_content = user_template.format(question=question)
             
-            # Format assistant response (solution) based on mode
+            # Format assistant response based on mode
             if mode in ["grpo", "sft", "answer_explain"]:
                 # Modes with CONCLUSION + EXPLANATION
-                solution = f"<CONCLUSION>{answer}</CONCLUSION>\n<EXPLANATION>{explanation}</EXPLANATION>"
+                solution = (
+                    f"<CONCLUSION>\n{answer}\n</CONCLUSION>\n"
+                    f"<EXPLANATION>\n{explanation}\n</EXPLANATION>"
+                )
             elif mode == "think_answer":
-                # Mode with REASONING + CONCLUSION (use explanation as reasoning)
-                solution = f"<REASONING>{explanation}</REASONING>\n<CONCLUSION>{answer}</CONCLUSION>"
+                # Mode with REASONING + CONCLUSION
+                solution = (
+                    f"<REASONING>\n{explanation}\n</REASONING>\n"
+                    f"<CONCLUSION>\n{answer}\n</CONCLUSION>"
+                )
             else:
                 raise ValueError(f"Unknown mode: {mode}")
             
-            # MS-Swift format
-            entry = {
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content},
-                ],
-                "images": [absolute_image_path],
-                "solution": solution  # For GRPO training
-            }
+            # MS-Swift format differs between SFT and GRPO
+            if mode in ["sft", "answer_explain"]:
+                # SFT: assistant response goes in messages (supervised target)
+                entry = {
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content},
+                        {"role": "assistant", "content": solution},
+                    ],
+                    "images": [absolute_image_path],
+                }
+            else:
+                # GRPO/think_answer: response goes in solution field (for reward training)
+                entry = {
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_content},
+                    ],
+                    "images": [absolute_image_path],
+                    "solution": solution,
+                }
             
             f_out.write(json.dumps(entry, ensure_ascii=False) + '\n')
             count += 1

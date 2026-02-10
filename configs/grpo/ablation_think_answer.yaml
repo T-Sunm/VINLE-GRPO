@@ -13,14 +13,14 @@ model:
 # Data Configuration
 data:
   # Adjusted path to match your structure
-  train_dataset: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/data/processed/grpo/ViVQA-X_train_think_answer.jsonl"
+  train_dataset: "${PROJECT_ROOT}/data/processed/grpo/ViVQA-X_train_think_answer.jsonl"
   max_length: 4096
   max_completion_length: 1024
   
 # Reward Configuration
 rewards:
   # Absolute path to plugin
-  plugin_path: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/external/ms-swift/examples/train/grpo/plugin/plugin.py"
+  plugin_path: "${PROJECT_ROOT}/external/ms-swift/examples/train/grpo/plugin/plugin.py"
   functions:
     - vinle_format_think_answer  # Validates REASONING + CONCLUSION tags
     - vinle_accuracy             # ROUGE-L + BERTScore on CONCLUSION
@@ -79,7 +79,7 @@ training:
 # Output Configuration
 output:
   # Absolute path
-  dir: "/home/vlai-vqa-nle/minhtq/VINLE-GRPO/output/grpo/ablation_think_answer"
+  dir: "${PROJECT_ROOT}/outputs/training/grpo/ablation_think_answer"
   resume_from_checkpoint: null
   
 # Environment

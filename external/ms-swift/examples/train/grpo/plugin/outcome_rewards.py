@@ -1,9 +1,22 @@
 import string
 import re
+import os
 import unicodedata
 import torch
+from pathlib import Path as _Path
 from base_rewards import BaseRewardScorer
 from pycocoevalcap.rouge.rouge import Rouge
+
+# Auto-detect PROJECT_ROOT from file location
+def _get_project_root():
+    """Auto-detect VINLE-GRPO project root."""
+    _env_root = os.environ.get('VINLE_PROJECT_ROOT')
+    if _env_root:
+        return _Path(_env_root)
+    # This file is at: external/ms-swift/examples/train/grpo/plugin/
+    return _Path(__file__).resolve().parents[6]
+
+_PROJECT_ROOT = _get_project_root()
 def normalize_answer(text: str) -> str:
     text = text.lower().strip()
     
@@ -224,8 +237,8 @@ class CaptionRewardScorer(BaseRewardScorer):
     
     def __init__(self, 
                  model_name_or_path="bert",
-                 coco_train_path="/home/vlai-vqa-nle/minhtq/vqa-nle/data/processed/coco/coco_train2014_with_captions.json",
-                 coco_val_path="/home/vlai-vqa-nle/minhtq/vqa-nle/data/processed/coco/coco_val2014_with_captions.json"):
+                 coco_train_path=str(_PROJECT_ROOT / 'data' / 'processed' / 'coco' / 'coco_train2014_with_captions.json'),
+                 coco_val_path=str(_PROJECT_ROOT / 'data' / 'processed' / 'coco' / 'coco_val2014_with_captions.json')):
         """
         Args:
             model_name_or_path: Đường dẫn đến BERT model.

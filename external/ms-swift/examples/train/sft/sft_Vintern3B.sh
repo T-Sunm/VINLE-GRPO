@@ -1,3 +1,8 @@
+# Auto-detect project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="${VINLE_PROJECT_ROOT:-$(cd "$SCRIPT_DIR/../../../../.." && pwd)}"
+export PROJECT_ROOT
+
 export HF_ENDPOINT="https://huggingface.co"
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # "OpenGVLab/InternVL3_5-2B", "5CD-AI/Vintern-3B-R-beta"
@@ -15,8 +20,8 @@ MAX_STEPS=8000
 SAVE_STEPS=50
 LOGGING_STEPS=1
 
-TRAIN_DATASET_PATH="/home/vlai-vqa-nle/minhtq/vqa-nle/data/processed/sft/ViVQA-X_train_msswift.jsonl"
-OUTPUT_DIR="/home/vlai-vqa-nle/minhtq/vqa-nle/ms-swift/examples/train/sft/output/"
+TRAIN_DATASET_PATH="$PROJECT_ROOT/data/processed/sft/ViVQA-X_train_sft.jsonl"
+OUTPUT_DIR="$PROJECT_ROOT/outputs/training/sft/"
 
 
 CUDA_VISIBLE_DEVICES=0 \
