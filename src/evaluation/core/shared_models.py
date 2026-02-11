@@ -229,10 +229,37 @@ class SharedSyntheticAnswerGenerator:
         return synthetic_answers
 
 
+# ============================================================================
+# SHARED CLIPSCORE MODEL
+# ============================================================================
+
+class SharedCLIPScoreModel:
+    """
+    Singleton for CLIPScore model from torchmetrics.
+    """
+    _instances = {}
+
+    @classmethod
+    def get_instance(cls, model_name_or_path: str = "openai/clip-vit-base-patch16", 
+                     device: str = "cuda") -> 'CLIPScore':
+        from torchmetrics.multimodal import CLIPScore
+        
+        key = (model_name_or_path, device)
+        if key in cls._instances:
+            return cls._instances[key]
+
+        metric = CLIPScore(model_name_or_path=model_name_or_path)
+        metric = metric.to(device)
+        metric.eval()
+        cls._instances[key] = metric
+        return metric
+
+
 __all__ = [
     "SharedBERTScoreModel",
     "SharedSMILEModel", 
     "SharedSyntheticAnswerGenerator",
+    "SharedCLIPScoreModel",
 ]
 
 

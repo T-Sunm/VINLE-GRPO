@@ -6,8 +6,9 @@
 #       configs/sft/baseline.yaml
 
 # Model Configuration: "OpenGVLab/InternVL3_5-2B"
+# 5CD-AI/Vintern-3B-R-beta
 model:
-  id_or_path: "OpenGVLab/InternVL3_5-2B"
+  id_or_path: "5CD-AI/Vintern-3B-R-beta"
   type: "internvl3"
   
 # Data Configuration
@@ -47,8 +48,8 @@ training:
   torch_dtype: "bfloat16"
   attn_impl: "flash_attention_2"
   gradient_checkpointing: true
-  dataloader_num_workers: 8
-  dataset_num_proc: 8
+  dataloader_num_workers: 2
+  dataset_num_proc: 1
   
   # Quantization
   quant_method: "bnb"

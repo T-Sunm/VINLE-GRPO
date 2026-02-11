@@ -22,15 +22,17 @@ from .core import (
     validate_format_consistency,
     normalize_explanation,
     ensure_list,
+    SharedSyntheticAnswerGenerator,
+    SharedCLIPScoreModel,
     SharedBERTScoreModel,
     SharedSMILEModel,
-    SharedSyntheticAnswerGenerator,
 )
 
 from .metrics import (
     compute_accuracy,
     get_nlg_scores,
     compute_smile_scores,
+    compute_clip_scores,
 )
 
 
@@ -65,12 +67,15 @@ def add_scores_to_row(row: Dict, scores: Dict, prefix: str = "") -> None:
 # FILE EVALUATION
 # ============================================================================
 
-def evaluate_file(json_path: str, device: str = "cuda") -> Dict:
+def evaluate_file(json_path: str, device: str = "cuda", image_dir: str = None) -> Dict:
     """
     Evaluate a single inference output file.
     
     Auto-detects format and computes applicable metrics.
     """
+    if image_dir is None:
+        image_dir = "/mnt/VLAI_data/COCO_Images/val2014"
+        
     print(f"Loading: {json_path}")
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -91,14 +96,22 @@ def evaluate_file(json_path: str, device: str = "cuda") -> Dict:
     all_questions = []
     all_gt_answers = []
     all_pred_answers = []
+    all_image_paths = []
     by_type = {}
     
     for item in data:
         gt_expls = [normalize_explanation(e) for e in ensure_list(item.get("explanation", []))]
         all_gt_expls.append(gt_expls)
         all_questions.append(item.get("question", ""))
-        all_gt_answers.append(item.get("answer", ""))
         all_pred_answers.append(item.get("predict", ""))
+        
+        # Resolve image path
+        img_name = item.get("image_name", "")
+        if not img_name and "image_id" in item:
+            img_name = f"COCO_val2014_{int(item['image_id']):012d}.jpg"
+        
+        img_path = os.path.join(image_dir, img_name)
+        all_image_paths.append(img_path)
         
         ans_type = item.get("answer_type", "other")
         if ans_type not in by_type:
@@ -108,12 +121,14 @@ def evaluate_file(json_path: str, device: str = "cuda") -> Dict:
                 "questions": [],
                 "gt_answers": [],
                 "pred_answers": [],
+                "image_paths": [],
             }
         
         by_type[ans_type]["gt_expls"].append(gt_expls)
         by_type[ans_type]["questions"].append(item.get("question", ""))
         by_type[ans_type]["gt_answers"].append(item.get("answer", ""))
         by_type[ans_type]["pred_answers"].append(item.get("predict", ""))
+        by_type[ans_type]["image_paths"].append(img_path)
     
     # Initialize results
     results = {
@@ -131,6 +146,13 @@ def evaluate_file(json_path: str, device: str = "cuda") -> Dict:
         all_explanations = [get_explanation_field(item, format_info) for item in data]
         
         explanation_scores = get_nlg_scores(all_gt_expls, all_explanations, device, model_type='phobert')
+        
+        # Compute CLIPScore
+        print("Computing CLIP scores...")
+        clip_scores = compute_clip_scores(all_image_paths, all_explanations, device=device)
+        if clip_scores:
+            explanation_scores["CLIPScore"] = sum(clip_scores) / len(clip_scores)
+            
         results['explanation_scores'] = explanation_scores
         
         # Collect by type
@@ -184,6 +206,12 @@ def evaluate_file(json_path: str, device: str = "cuda") -> Dict:
                 device,
                 model_type='phobert'
             )
+            
+            # CLIPScore by type
+            type_clip = compute_clip_scores(type_data['image_paths'], type_data['pred_fields'], device=device)
+            if type_clip:
+                nlg_scores_type["CLIPScore"] = sum(type_clip) / len(type_clip)
+                
             type_results['explanation_scores'] = nlg_scores_type
         
         # Answer scores
@@ -207,7 +235,6 @@ def evaluate_file(json_path: str, device: str = "cuda") -> Dict:
         results['by_answer_type'][ans_type] = type_results
     
     return results
-
 
 # ============================================================================
 # RESULTS FORMATTING
@@ -261,6 +288,8 @@ def main():
                        help="Device for model computation")
     parser.add_argument("--cuda-device", type=str, default="0",
                        help="CUDA_VISIBLE_DEVICES value")
+    parser.add_argument("--image-dir", type=str, default="/mnt/VLAI_data/COCO_Images/val2014",
+                       help="Directory containing COCO images")
     
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_device
@@ -292,6 +321,7 @@ def main():
     SharedBERTScoreModel.get_scorer(model_type='phobert', device='cpu')
     SharedSMILEModel.get_instance(model_type='phobert')
     SharedSyntheticAnswerGenerator.initialize(device=args.device)
+    SharedCLIPScoreModel.get_instance(device=args.device)
     print("Models ready\n")
     
     # Evaluate files
@@ -306,7 +336,7 @@ def main():
         print(f"{'─'*80}")
         
         try:
-            results = evaluate_file(file_path, device=args.device)
+            results = evaluate_file(file_path, device=args.device, image_dir=args.image_dir)
             rows = format_results_to_dataframe(results, model_name)
             all_rows.extend(rows)
             print(f"Done - Accuracy: {results['accuracy']:.2f}%")

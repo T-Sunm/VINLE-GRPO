@@ -33,11 +33,11 @@ def infer(model: InternVLModel, question: str, image_path: str) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Zero-shot Inference (Base Model)")
     parser.add_argument("--model", required=True, help="Base model path or HF ID")
-    parser.add_argument("--data_path", default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_test.json")
+    parser.add_argument("--data_path", default="data/raw/vivqa-x/annotations/ViVQA-X_test.json")
     parser.add_argument("--image_folder", default="/mnt/VLAI_data/COCO_Images/val2014")
-    parser.add_argument("--output_dir", default="results/inference/zeroshot")
+    parser.add_argument("--output_dir", default="outputs/inference/zeroshot")
     parser.add_argument("--output_name", default=None)
-    parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of samples. 0 or None means all.")
     parser.add_argument("--device", default="cuda")
     
     args = parser.parse_args()
@@ -46,15 +46,13 @@ def main():
     print("Zero-shot Inference (Base Model - GRPO Prompt)")
     print("=" * 80)
     
-    model = InternVLModel()
-    model.model_path = args.model
+    model = InternVLModel(model_path=args.model)
     
     with open(args.data_path, "r") as f:
         data = json.load(f)
     data = list(data.values()) if isinstance(data, dict) else data
-    if args.limit:
+    if args.limit and args.limit > 0:
         data = data[:args.limit]
-    
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / f"{args.output_name or Path(args.model).name}.json"

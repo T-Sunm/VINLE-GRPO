@@ -15,6 +15,9 @@ from .nlg_metrics import (
 )
 
 
+from .clip_metrics import compute_clip_scores
+
+
 __all__ = [
     # VQA accuracy
     "check_accuracy",
@@ -25,4 +28,6 @@ __all__ = [
     "get_nlg_scores",
     # SMILE metrics
     "compute_smile_scores",
+    # CLIP metrics
+    "compute_clip_scores",
 ]
