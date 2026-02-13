@@ -12,16 +12,9 @@ import torch
 
 import shutil
 
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.cider.cider import Cider
 
-# Meteor requires Java - make it optional
-JAVA_AVAILABLE = shutil.which('java') is not None
-if JAVA_AVAILABLE:
-    from pycocoevalcap.meteor.meteor import Meteor
-else:
-    print("Warning: Java not found, METEOR metric will be skipped.")
+
+
 
 from ..core.shared_models import SharedBERTScoreModel
 from ..core.text_preprocessing import (
@@ -46,13 +39,26 @@ def compute_traditional_metrics(gts: dict, res: dict) -> dict[str, float]:
     Returns:
         Dictionary with metric scores (scaled to 0-100)
     """
+    from pycocoevalcap.bleu.bleu import Bleu
+    from pycocoevalcap.rouge.rouge import Rouge
+    from pycocoevalcap.cider.cider import Cider
+
     scorers = [
         (Bleu(4), ["BLEU-1", "BLEU-2", "BLEU-3", "BLEU-4"]),
         (Rouge(), "ROUGE_L"),
         (Cider(), "CIDEr"),
     ]
-    if JAVA_AVAILABLE:
-        scorers.insert(1, (Meteor(), "METEOR"))
+
+    # Meteor requires Java - make it optional
+    java_available = shutil.which('java') is not None
+    if java_available:
+        try:
+            from pycocoevalcap.meteor.meteor import Meteor
+            scorers.insert(1, (Meteor(), "METEOR"))
+        except ImportError:
+            print("Warning: pycocoevalcap.meteor not found, METEOR metric will be skipped.")
+    else:
+        print("Warning: Java not found, METEOR metric will be skipped.")
     
     scores = {}
     for scorer, method in scorers:

@@ -127,14 +127,14 @@ python -m src.evaluation.calculate_smile_scores \
 ### Dependencies
 
 - **Java**: Required for METEOR metric. If not installed, METEOR will be skipped automatically.
-- **SMILE package**: Only needed for `calculate_smile_scores.py`. Install in `vqa-nle-smile` env:
+- **Key Packages**: Install in both environments to support device mapping and Vietnamese processing:
   ```bash
-  pip install underthesea
+  pip install accelerate underthesea
   ```
 
 ### Environment Separation
 
 | Script | Environment | Key Dependencies |
 |:---:|:---:|:---:|
-| `calculate_scores.py` | `vqa-nle-eval` | `bert-score`, `torchmetrics`, `transformers` |
-| `calculate_smile_scores.py` | `vqa-nle-smile` | `smile-metric`, `underthesea`, `flash-attn` |
+| `calculate_scores.py` | `vqa-nle-eval` | `bert-score`, `transformers`, `torchmetrics`, `accelerate` |
+| `calculate_smile_scores.py` | `vqa-nle-smile` | `smile-metric`, `underthesea`, `flash-attn`, `accelerate` |

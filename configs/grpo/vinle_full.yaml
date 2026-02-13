@@ -4,7 +4,7 @@
 # Model Configuration: "OpenGVLab/InternVL3_5-2B"
 # 5CD-AI/Vintern-3B-R-beta
 model:
-  id_or_path: "5CD-AI/Vintern-3B-R-beta"
+  id_or_path: "OpenGVLab/InternVL3_5-2B"
   type: "internvl3"
   
 # Data Configuration
@@ -74,11 +74,10 @@ training:
 # Output Configuration
 output:
   dir: "${PROJECT_ROOT}/outputs/training/grpo/vinle_full/"
-  resume_from_checkpoint: /home/vqa-nle/workspace/VINLE-GRPO/outputs/training/grpo/vinle_full/v6-20260211-231626/checkpoint-300
-  
+  resume_from_checkpoint: /home/vqa-nle/workspace/VINLE-GRPO/outputs/training/grpo/vinle_full/v7-20260212-165106/checkpoint-3000
 # Environment
 environment:
-  cuda_visible_devices: "1"
+  cuda_visible_devices: "0"
   pytorch_cuda_alloc_conf: "expandable_segments:True"
   hf_endpoint: "https://huggingface.co"
   use_vllm: false

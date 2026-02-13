@@ -8,7 +8,7 @@ Vietnamese text for NLG metrics computation.
 import re
 import unicodedata
 
-from underthesea import text_normalize, word_tokenize
+
 
 
 # ============================================================================
@@ -31,6 +31,7 @@ def segment_vietnamese(text: str) -> str:
     """
     if not text or not text.strip():
         return ""
+    from underthesea import word_tokenize
     return word_tokenize(text, format="text")
 
 
@@ -165,6 +166,7 @@ def preprocess_vietnamese_text(text: str) -> str:
     if not text or not text.strip():
         return ""
     
+    from underthesea import text_normalize, word_tokenize
     normalized_text = text_normalize(text)
     tokenized_text = word_tokenize(normalized_text, format="text")
     
