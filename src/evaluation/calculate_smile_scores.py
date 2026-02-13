@@ -1,11 +1,11 @@
 """
-VQA Evaluation Script - NLG Metrics.
+VQA Evaluation Script - SMILE Metrics.
 
-Computes: Accuracy, BLEU, METEOR, ROUGE-L, BERTScore, CLIPScore.
-Run in vqa-nle-eval env.
+Computes: SMILE scores using synthetic answers from LLM.
+Run in vqa-nle-smile env (has flash-attention).
 
 Usage:
-    python -m src.evaluation.calculate_scores --input-dir outputs/inference/zeroshot
+    python -m src.evaluation.calculate_smile_scores --input-dir outputs/inference/zeroshot
 """
 
 import os
@@ -19,104 +19,61 @@ from typing import Dict, List
 
 from .core import (
     detect_format,
-    validate_format_consistency,
-    normalize_explanation,
-    ensure_list,
-    SharedBERTScoreModel,
+    normalize_answer,
+)
+
+from .core.shared_models import (
+    SharedSyntheticAnswerGenerator,
+    SharedSMILEModel,
 )
 
 from .metrics import (
     compute_accuracy,
-    get_nlg_scores,
-    compute_clip_scores,
+    compute_smile_scores,
 )
-
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-def get_explanation_field(item: Dict, format_info: Dict) -> str:
-    """
-    Extract explanation field with fallback logic.
-    
-    Priority: pred_explanation > thinking > empty
-    """
-    if format_info['has_pred_explanation'] and item.get("pred_explanation", "").strip():
-        return normalize_explanation(item.get("pred_explanation", ""))
-    elif format_info['has_thinking']:
-        return normalize_explanation(item.get("thinking", ""))
-    return ""
-
-
-def add_scores_to_row(row: Dict, scores: Dict, prefix: str = "") -> None:
-    """Add scores to row dictionary with optional prefix."""
-    if not scores:
-        return
-    
-    for key, value in scores.items():
-        score_key = f"{prefix}_{key}" if prefix else key
-        row[score_key] = round(value, 2)
 
 
 # ============================================================================
 # FILE EVALUATION
 # ============================================================================
 
-def evaluate_file(json_path: str, device: str = "cuda", image_dir: str = None, bert_device: str = None) -> Dict:
+def evaluate_smile(json_path: str, device: str = "cuda") -> Dict:
     """
-    Evaluate a single inference output file.
-    
-    Computes: Accuracy, NLG metrics, CLIPScore.
+    Evaluate SMILE scores for a single inference output file.
     """
-    if image_dir is None:
-        image_dir = "/mnt/VLAI_data/COCO_Images/val2014"
-    
-    if bert_device is None:
-        bert_device = device
-        
     print(f"Loading: {json_path}")
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     
     # Detect format
-    format_info = detect_format(data)
+    format_info = detect_format(data)   
     print(f"Format detected: {format_info['format_name']}")
     
-    if not validate_format_consistency(data):
-        print("Warning: Inconsistent format detected!")
-    
-    # Compute accuracy
-    print("Computing accuracy...")
+    # Compute accuracy (for reference)
     accuracy_results = compute_accuracy(data)
     
     # Prepare data
-    all_gt_expls = []
-    all_image_paths = []
+    all_questions = []
+    all_gt_answers = []
+    all_pred_answers = []
     by_type = {}
     
     for item in data:
-        gt_expls = [normalize_explanation(e) for e in ensure_list(item.get("explanation", []))]
-        all_gt_expls.append(gt_expls)
-        
-        # Resolve image path
-        img_name = item.get("image_name", "")
-        if not img_name and "image_id" in item:
-            img_name = f"COCO_val2014_{int(item['image_id']):012d}.jpg"
-        
-        img_path = os.path.join(image_dir, img_name)
-        all_image_paths.append(img_path)
+        all_questions.append(item.get("question", ""))
+        all_gt_answers.append(item.get("answer", ""))
+        all_pred_answers.append(item.get("predict", ""))
         
         ans_type = item.get("answer_type", "other")
         if ans_type not in by_type:
             by_type[ans_type] = {
-                "gt_expls": [],
-                "pred_fields": [],
-                "image_paths": [],
+                "questions": [],
+                "gt_answers": [],
+                "pred_answers": [],
             }
         
-        by_type[ans_type]["gt_expls"].append(gt_expls)
-        by_type[ans_type]["image_paths"].append(img_path)
+        by_type[ans_type]["questions"].append(item.get("question", ""))
+        by_type[ans_type]["gt_answers"].append(item.get("answer", ""))
+        by_type[ans_type]["pred_answers"].append(item.get("predict", ""))
     
     # Initialize results
     results = {
@@ -126,30 +83,28 @@ def evaluate_file(json_path: str, device: str = "cuda", image_dir: str = None, b
         "accuracy": accuracy_results['accuracy'],
     }
     
-    # Evaluate explanation field (pred_explanation or thinking)
-    if format_info['has_pred_explanation'] or format_info['has_thinking']:
-        print("Evaluating explanations...")
-        
-        # Extract explanations with fallback logic
-        all_explanations = [get_explanation_field(item, format_info) for item in data]
-        
-        explanation_scores = get_nlg_scores(all_gt_expls, all_explanations, bert_device, model_type='phobert')
-        
-        # Compute CLIPScore
-        print("Computing CLIP scores...")
-        clip_scores = compute_clip_scores(all_image_paths, all_explanations, device=device)
-        if clip_scores:
-            explanation_scores["CLIPScore"] = sum(clip_scores) / len(clip_scores)
-            
-        results['explanation_scores'] = explanation_scores
-        
-        # Collect by type
-        for ans_type in by_type:
-            type_expls = [
-                get_explanation_field(item, format_info)
-                for item in data if item.get("answer_type", "other") == ans_type
-            ]
-            by_type[ans_type]["pred_fields"] = type_expls
+    # Generate synthetic answers
+    print("Generating synthetic answers...")
+    if not SharedSyntheticAnswerGenerator.is_initialized():
+        SharedSyntheticAnswerGenerator.initialize(device=device)
+    
+    all_synthetic_answers = SharedSyntheticAnswerGenerator.generate_batch(
+        questions=all_questions,
+        answers=all_gt_answers,
+        max_new_tokens=128,
+        show_progress=True
+    )
+    
+    # Compute SMILE scores
+    print("Computing SMILE scores...")
+    smile_scores = compute_smile_scores(
+        all_questions,
+        all_gt_answers,
+        all_pred_answers,
+        synthetic_answers=all_synthetic_answers,
+        model_type='phobert'
+    )
+    results['answer_scores'] = smile_scores
     
     # Compute by answer type
     print("Computing by answer type...")
@@ -164,21 +119,22 @@ def evaluate_file(json_path: str, device: str = "cuda", image_dir: str = None, b
             'accuracy': type_accuracy.get('accuracy', 0),
         }
         
-        # Explanation scores
-        if type_data.get('pred_fields'):
-            nlg_scores_type = get_nlg_scores(
-                type_data['gt_expls'],
-                type_data['pred_fields'],
-                bert_device,
-                model_type='phobert'
+        if type_data['questions']:
+            synthetic_answers_type = SharedSyntheticAnswerGenerator.generate_batch(
+                type_data['questions'],
+                type_data['gt_answers'],
+                max_new_tokens=128,
+                show_progress=False
             )
             
-            # CLIPScore by type
-            type_clip = compute_clip_scores(type_data['image_paths'], type_data['pred_fields'], device=device)
-            if type_clip:
-                nlg_scores_type["CLIPScore"] = sum(type_clip) / len(type_clip)
-                
-            type_results['explanation_scores'] = nlg_scores_type
+            smile_scores_type = compute_smile_scores(
+                type_data['questions'],
+                type_data['gt_answers'],
+                type_data['pred_answers'],
+                synthetic_answers=synthetic_answers_type,
+                model_type='phobert'
+            )
+            type_results['answer_scores'] = smile_scores_type
         
         results['by_answer_type'][ans_type] = type_results
     
@@ -190,7 +146,7 @@ def evaluate_file(json_path: str, device: str = "cuda", image_dir: str = None, b
 # ============================================================================
 
 def format_results_to_dataframe(results: Dict, model_name: str) -> List[Dict]:
-    """Format evaluation results into DataFrame rows."""
+    """Format SMILE results into DataFrame rows."""
     rows = []
     
     # Overall row
@@ -201,7 +157,9 @@ def format_results_to_dataframe(results: Dict, model_name: str) -> List[Dict]:
         'correct': results['correct_count'],
         'accuracy': round(results['accuracy'], 2),
     }
-    add_scores_to_row(overall_row, results.get('explanation_scores'), 'explanation')
+    if results.get('answer_scores'):
+        for key, value in results['answer_scores'].items():
+            overall_row[key] = round(value, 2)
     rows.append(overall_row)
     
     # By answer type rows
@@ -213,7 +171,9 @@ def format_results_to_dataframe(results: Dict, model_name: str) -> List[Dict]:
             'correct': type_data['correct_count'],
             'accuracy': round(type_data['accuracy'], 2),
         }
-        add_scores_to_row(type_row, type_data.get('explanation_scores'), 'explanation')
+        if type_data.get('answer_scores'):
+            for key, value in type_data['answer_scores'].items():
+                type_row[key] = round(value, 2)
         rows.append(type_row)
     
     return rows
@@ -224,7 +184,7 @@ def format_results_to_dataframe(results: Dict, model_name: str) -> List[Dict]:
 # ============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="VQA Evaluation - NLG Metrics")
+    parser = argparse.ArgumentParser(description="VQA Evaluation - SMILE Metrics")
     parser.add_argument("--input-dir", type=str, default="outputs/inference",
                        help="Directory containing JSON inference results")
     parser.add_argument("--filenames", nargs="+", default=[],
@@ -235,10 +195,8 @@ def main():
                        help="Device for model computation")
     parser.add_argument("--cuda-device", type=str, default="0",
                        help="CUDA_VISIBLE_DEVICES value")
-    parser.add_argument("--image-dir", type=str, default="/mnt/VLAI_data/COCO_Images/val2014",
-                       help="Directory containing COCO images")
-    parser.add_argument("--bert-device", type=str, default=None,
-                       help="Device for BERTScore (default: same as --device). Use 'cpu' to avoid CUDA asserts.")
+    parser.add_argument("--bert-device", type=str, default="cpu",
+                       help="Device for BERTScore in SMILE (default: cpu to avoid CUDA asserts)")
     
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_device
@@ -258,7 +216,7 @@ def main():
     
     # Print header
     print(f"\n{'='*80}")
-    print("VINLE-GRPO VQA Evaluation (NLG Metrics)")
+    print("VINLE-GRPO VQA Evaluation (SMILE Metrics)")
     print(f"{'='*80}")
     print(f"Input: {args.input_dir}")
     print(f"Files: {len(file_paths)}")
@@ -267,8 +225,11 @@ def main():
     
     # Initialize shared models
     print("Initializing models...")
-    bert_dev = args.bert_device if args.bert_device else args.device
-    SharedBERTScoreModel.get_scorer(model_type='phobert', device=bert_dev)
+    # SMILE uses PhoBERT internally - init on specified device
+    from .core.shared_models import SharedBERTScoreModel
+    SharedBERTScoreModel.get_scorer(model_type='phobert', device=args.bert_device)
+    SharedSMILEModel.get_instance(model_type='phobert')
+    SharedSyntheticAnswerGenerator.initialize(device=args.device)
     print("Models ready\n")
     
     # Evaluate files
@@ -283,10 +244,10 @@ def main():
         print(f"{'─'*80}")
         
         try:
-            results = evaluate_file(file_path, device=args.device, image_dir=args.image_dir, bert_device=bert_dev)
+            results = evaluate_smile(file_path, device=args.device)
             rows = format_results_to_dataframe(results, model_name)
             all_rows.extend(rows)
-            print(f"Done - Accuracy: {results['accuracy']:.2f}%")
+            print(f"Done - SMILE_avg: {results['answer_scores'].get('SMILE_avg', 0):.2f}")
         except Exception as e:
             print(f"Error: {e}")
             import traceback
@@ -302,12 +263,12 @@ def main():
     if args.output_file:
         csv_path = args.output_file if args.output_file.endswith(".csv") else f"{args.output_file}.csv"
     else:
-        csv_path = os.path.join(args.input_dir, f"nlg_results_{timestamp}.csv")
+        csv_path = os.path.join(args.input_dir, f"smile_results_{timestamp}.csv")
     
     df.to_csv(csv_path, index=False, encoding="utf-8")
     
     print(f"\n{'='*80}")
-    print("Evaluation completed!")
+    print("SMILE Evaluation completed!")
     print(f"Results saved to: {csv_path}")
     print(f"{'='*80}\n")
     print(df.to_string(index=False))

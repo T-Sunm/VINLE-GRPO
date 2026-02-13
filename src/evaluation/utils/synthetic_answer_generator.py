@@ -62,7 +62,7 @@ def load_vintern_model(model_path: str, device: Optional[torch.device] = None):
 
 
 def load_qwen_text_model(
-    model_path: str = "/mnt/dataset1/pretrained_fm/Qwen_Qwen2.5-3B-Instruct",
+    model_path: str = "Qwen/Qwen2.5-3B-Instruct",
     device: Optional[torch.device] = None
 ) -> Tuple:
     """
@@ -91,7 +91,8 @@ def load_qwen_text_model(
         low_cpu_mem_usage=True,
         trust_remote_code=True,
         device_map=device_map,  # Use specific device instead of auto
-        local_files_only=is_local
+        local_files_only=is_local,
+        attn_implementation="flash_attention_2"  # Enable Flash Attention 2
     )
     model.eval()
     

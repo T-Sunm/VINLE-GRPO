@@ -74,11 +74,11 @@ training:
 # Output Configuration
 output:
   dir: "${PROJECT_ROOT}/outputs/training/grpo/vinle_full/"
-  resume_from_checkpoint: null  # Path to checkpoint or null
+  resume_from_checkpoint: /home/vqa-nle/workspace/VINLE-GRPO/outputs/training/grpo/vinle_full/v6-20260211-231626/checkpoint-300
   
 # Environment
 environment:
-  cuda_visible_devices: "2"
+  cuda_visible_devices: "1"
   pytorch_cuda_alloc_conf: "expandable_segments:True"
   hf_endpoint: "https://huggingface.co"
   use_vllm: false

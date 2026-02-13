@@ -15,14 +15,16 @@ from .text_preprocessing import (
 
 from .shared_models import (
     SharedBERTScoreModel,
-    SharedSMILEModel,
-    SharedSyntheticAnswerGenerator,
+    SharedCLIPScoreModel,
 )
 
 from .format_detector import (
     detect_format,
     validate_format_consistency,
 )
+
+# Lazy imports for SMILE (use directly when needed):
+#   from .core.shared_models import SharedSMILEModel, SharedSyntheticAnswerGenerator
 
 __all__ = [
     # Text preprocessing
@@ -34,14 +36,9 @@ __all__ = [
     "ensure_list",
     "preprocess_vietnamese_text",
     "sanitize_text_for_bert",
-    # Standardized preprocessing pipelines
-    "normalize_unsorted",
-    "preprocess_for_nlg_metrics",
-    "preprocess_for_smile",
     # Shared models
     "SharedBERTScoreModel",
-    "SharedSMILEModel",
-    "SharedSyntheticAnswerGenerator",
+    "SharedCLIPScoreModel",
     # Format detection
     "detect_format",
     "validate_format_consistency",

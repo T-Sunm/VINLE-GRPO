@@ -18,10 +18,9 @@ from .core import (
     ensure_list,
     preprocess_vietnamese_text,
     sanitize_text_for_bert,
-    # Shared models
+    # Shared models (non-SMILE)
     SharedBERTScoreModel,
-    SharedSMILEModel,
-    SharedSyntheticAnswerGenerator,
+    SharedCLIPScoreModel,
     # Format detection
     detect_format,
     validate_format_consistency,
@@ -35,9 +34,13 @@ from .metrics import (
     compute_traditional_metrics,
     compute_bertscore_max_ref,
     get_nlg_scores,
-    # SMILE metrics
-    compute_smile_scores,
+    # CLIP metrics
+    compute_clip_scores,
 )
+
+# Lazy imports for SMILE (requires smile package + LLM)
+# Use: from src.evaluation.core import SharedSMILEModel, SharedSyntheticAnswerGenerator
+# Or:  from src.evaluation.metrics import compute_smile_scores
 
 __all__ = [
     # Core - Text preprocessing
@@ -51,8 +54,7 @@ __all__ = [
     "sanitize_text_for_bert",
     # Core - Shared models
     "SharedBERTScoreModel",
-    "SharedSMILEModel",
-    "SharedSyntheticAnswerGenerator",
+    "SharedCLIPScoreModel",
     # Core - Format detection
     "detect_format",
     "validate_format_consistency",
@@ -63,7 +65,6 @@ __all__ = [
     "compute_traditional_metrics",
     "compute_bertscore_max_ref",
     "get_nlg_scores",
-    # Metrics - SMILE
-    "compute_smile_scores",
+    # Metrics - CLIP
+    "compute_clip_scores",
 ]
-

@@ -16,13 +16,6 @@ from tqdm import tqdm
 
 # Get repo root directory dynamically
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SMILE_PATH = str(REPO_ROOT / 'external' / 'smile-metric')
-
-# Add SMILE metric path
-if SMILE_PATH not in sys.path:
-    sys.path.append(SMILE_PATH)
-
-from smile.smile import SMILE
 
 
 
@@ -51,30 +44,15 @@ class SharedBERTScoreModel:
         return text if text else "."
     
     @classmethod
-    def _fix_tokenizer(cls, tokenizer):
-        """Fix pad_token_id for PhoBERT."""
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = "<pad>"
-        
-        if tokenizer.pad_token_id is None:
-            tokenizer.pad_token_id = 1
-        
-        return tokenizer
-    
-    @classmethod
     def get_scorer(cls, model_type: str = "phobert", device: str = "cuda"):
-        """Get or create cached BERTScorer."""
+        """Get or create cached BERTScorer. Lets BERTScorer manage its own tokenizer."""
         import bert_score
-        from transformers import AutoTokenizer
         
         key = (model_type, device)
         if key in cls._scorers:
             return cls._scorers[key]
         
         model_name = cls.MODEL_MAPPING.get(model_type, model_type)
-        
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        tokenizer = cls._fix_tokenizer(tokenizer)
         
         scorer = bert_score.BERTScorer(
             model_type=model_name,
@@ -88,10 +66,15 @@ class SharedBERTScoreModel:
             rescale_with_baseline=False
         )
         
-        scorer._tokenizer = tokenizer
-        
         cls._scorers[key] = scorer
         return scorer
+    
+    @classmethod
+    def get_tokenizer(cls, model_type: str = "phobert"):
+        """Get a tokenizer matching the BERTScore model (for round-trip sanitization)."""
+        from transformers import AutoTokenizer
+        model_name = cls.MODEL_MAPPING.get(model_type, model_type)
+        return AutoTokenizer.from_pretrained(model_name)
     
     @classmethod
     def compute_scores(cls, predictions: list, references: list, 
@@ -129,6 +112,12 @@ class SharedSMILEModel:
     def get_instance(cls, model_type: str = 'bert'):
         """Get or initialize shared SMILE model."""
         if model_type not in cls._instances:
+            # Lazy import SMILE
+            SMILE_PATH = str(REPO_ROOT / 'external' / 'smile-metric')
+            if SMILE_PATH not in sys.path:
+                sys.path.append(SMILE_PATH)
+            from smile.smile import SMILE
+            
             cls._instances[model_type] = SMILE(
                 emb_model=model_type,
                 eval_metrics=['avg', 'hm'],
@@ -159,7 +148,7 @@ class SharedSyntheticAnswerGenerator:
     # Default model path - can be overridden via environment variable or parameter
     DEFAULT_MODEL_PATH = os.getenv(
         'QWEN_MODEL_PATH',
-        '/mnt/dataset1/pretrained_fm/Qwen_Qwen3-8B'
+        'Qwen/Qwen2.5-7B-Instruct'
     )
     
     @classmethod
