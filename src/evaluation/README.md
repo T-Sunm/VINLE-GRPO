@@ -32,17 +32,12 @@ src/evaluation/
 ```bash
 conda activate vqa-nle-eval
 
-# Recommended: BERTScore on CPU (avoids CUDA asserts), CLIPScore on GPU
-python -m src.evaluation.calculate_scores \
-    --input-dir outputs/inference/zeroshot \
-    --bert-device cpu
-
-# Alternative: All on GPU (may crash with CUDA asserts)
+# Default: All on GPU (Safeguarded by automatic sanitization)
 python -m src.evaluation.calculate_scores \
     --input-dir outputs/inference/zeroshot \
     --device cuda:0
 
-# Alternative: All on CPU (slower but safe)
+# Alternative: All on CPU (Slower but safe)
 python -m src.evaluation.calculate_scores \
     --input-dir outputs/inference/zeroshot \
     --device cpu
@@ -57,14 +52,15 @@ python -m src.evaluation.calculate_scores \
 ```bash
 conda activate vqa-nle-smile
 
-# Default: Qwen LLM on GPU, PhoBERT on CPU
-python -m src.evaluation.calculate_smile_scores \
-    --input-dir outputs/inference/zeroshot
-
-# Alternative: PhoBERT on GPU (may crash with CUDA asserts)
+# Default: Qwen LLM on GPU, PhoBERT on GPU (Sanitized)
 python -m src.evaluation.calculate_smile_scores \
     --input-dir outputs/inference/zeroshot \
     --bert-device cuda:0
+
+# Alternative: PhoBERT on CPU (Extra safe)
+python -m src.evaluation.calculate_smile_scores \
+    --input-dir outputs/inference/zeroshot \
+    --bert-device cpu
 ```
 
 **Output**: `smile_results_YYYYMMDD_HHMMSS.csv`
@@ -100,29 +96,20 @@ python -m src.evaluation.calculate_scores \
 | `--filenames` | `[]` | List of specific filenames to evaluate |
 | `--output-file` | auto | Output CSV filename |
 | `--device` | `cuda:0` | GPU device for Qwen LLM |
-| `--bert-device` | `cpu` | Device for PhoBERT in SMILE. **Default `cpu` to avoid CUDA asserts** |
+| `--bert-device` | `cuda:0` | Device for PhoBERT. **Now safe on GPU via round-trip sanitization** |
 | `--cuda-device` | `0` | CUDA_VISIBLE_DEVICES ID |
 
 ## Important Notes
 
-### CUDA Asserts with PhoBERT
+### Robust GPU Tokenization (PhoBERT Sanitization)
 
-**Problem**: PhoBERT tokenization on GPU can trigger `CUDA error: device-side assert triggered` when encountering edge-case tokens (special characters, empty strings, etc.). This corrupts GPU state and causes all subsequent operations to fail.
+**Mechanism**: To prevent `CUDA error: device-side assert triggered` common in PhoBERT models when encountering edge-case tokens (special characters, empty strings, etc.), the evaluation and reward systems now use **Automatic Round-Trip Sanitization**.
 
-**Solution**: Use `--bert-device cpu` to run BERTScore/SMILE's PhoBERT on CPU:
+1.  **Text Cleaning**: Removes control characters and non-BMP symbols.
+2.  **Round-Trip Tokenize**: Validates and clamps token IDs within the vocabulary range on CPU before sending tensors to the GPU.
+3.  **Stability**: This ensures that all inputs entering the GPU are safe, allowing BERTScore and PhoBERT to run on CUDA without crashing the system.
 
-```bash
-# NLG metrics
-python -m src.evaluation.calculate_scores \
-    --input-dir outputs/inference/zeroshot \
-    --bert-device cpu
-
-# SMILE metrics (already defaults to cpu)
-python -m src.evaluation.calculate_smile_scores \
-    --input-dir outputs/inference/zeroshot
-```
-
-**Performance**: PhoBERT-base is small (~135M params), so CPU performance is acceptable. CLIPScore and Qwen LLM remain on GPU for speed.
+**Performance**: Running on GPU is significantly faster than the previously recommended CPU workaround. CLIPScore and Qwen LLM also remain on GPU for maximum efficiency.
 
 ### Dependencies
 

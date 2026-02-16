@@ -74,7 +74,7 @@ training:
 # Output Configuration
 output:
   dir: "${PROJECT_ROOT}/outputs/training/grpo/vinle_full/"
-  resume_from_checkpoint: /home/vqa-nle/workspace/VINLE-GRPO/outputs/training/grpo/vinle_full/v7-20260212-165106/checkpoint-3000
+  resume_from_checkpoint: /home/vqa-nle/workspace/VINLE-GRPO/outputs/training/grpo/vinle_full/v9-20260213-211004/checkpoint-3500
 # Environment
 environment:
   cuda_visible_devices: "0"

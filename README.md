@@ -107,7 +107,9 @@ python -m src.evaluation.calculate_scores \
     --device cuda:0
 ```
 
-> **For detailed evaluation**, see [Evaluation Documentation](src/evaluation/)
+> **For detailed evaluation**, see [Evaluation Documentation](src/evaluation/). 
+> 
+> *Note: Our pipeline includes **Automatic Round-Trip Sanitization** to protect GPUs from CUDA asserts during BERTScore/PhoBERT computation.*
 
 ---
 
