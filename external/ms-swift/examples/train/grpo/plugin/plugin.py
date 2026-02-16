@@ -1421,12 +1421,26 @@ class VinleExplanationReward(ORM):
             traceback.print_exc()
             return [0.0] * len(completions)
 
+class DeepSeekFormatReward(ORM):
+    """DeepSeek style hard format reward (0/1)"""
+    def __call__(self, completions: List[str], **kwargs) -> List[float]:
+        from rewards.basic_rewards import basic_format_reward
+        return basic_format_reward(completions)
+
+class DeepSeekAccuracyReward(ORM):
+    """DeepSeek style hard accuracy reward (0/1 exact match)"""
+    def __call__(self, completions: List[str], solution: List[str], **kwargs) -> List[float]:
+        from rewards.basic_rewards import basic_accuracy_reward
+        return basic_accuracy_reward(completions, solution)
+
 # Register VINLE rewards
 orms['vinle_format'] = VinleFormatReward
 orms['vinle_format_think_answer'] = VinleFormatThinkAnswer
 orms['vinle_format_explain_answer'] = VinleFormatExplainAnswer
 orms['vinle_accuracy'] = VinleAccuracyReward
 orms['vinle_explanation'] = VinleExplanationReward
+orms['deepseek_format'] = DeepSeekFormatReward
+orms['deepseek_accuracy'] = DeepSeekAccuracyReward
 
 print("\n" + "="*80)
 print("VINLE-GRPO Rewards Registered:")
@@ -1436,4 +1450,6 @@ print("  - vinle_format_think_answer  : REASONING + CONCLUSION")
 print("  - vinle_format_explain_answer: CONCLUSION + EXPLANATION")
 print("  - vinle_accuracy             : ROUGE-L + BERTScore")
 print("  - vinle_explanation          : BERTScore + CLIP")
+print("  - deepseek_format            : Hard binary (REASONING + CONCLUSION)")
+print("  - deepseek_accuracy          : Hard binary (Exact Match)")
 print("="*80 + "\n")
