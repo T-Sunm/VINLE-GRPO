@@ -33,7 +33,7 @@ def infer(model: InternVLModel, question: str, image_path: str) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="OTA Inference (R+C only)")
     parser.add_argument("--model", required=True)
-    parser.add_argument("--data_path", default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_test.json")
+    parser.add_argument("--data_path", default="data/raw/vivqa-x/annotations/ViVQA-X_test.json")
     parser.add_argument("--image_folder", default="/mnt/VLAI_data/COCO_Images/val2014")
     parser.add_argument("--output_dir", default="results/inference/ota")
     parser.add_argument("--output_name", default=None)

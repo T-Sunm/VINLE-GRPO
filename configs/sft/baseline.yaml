@@ -65,6 +65,6 @@ output:
   
 # Environment
 environment:
-  cuda_visible_devices: "1"
+  cuda_visible_devices: "2"
   pytorch_cuda_alloc_conf: "expandable_segments:True"
   hf_endpoint: "https://huggingface.co"
