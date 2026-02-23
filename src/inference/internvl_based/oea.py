@@ -46,8 +46,7 @@ def main():
     print("OEA Inference (CONCLUSION + EXPLANATION)")
     print("=" * 80)
     
-    model = InternVLModel()
-    model.model_path = args.model
+    model = InternVLModel(model_path=args.model)
     
     with open(args.data_path, "r") as f:
         data = json.load(f)
