@@ -5,18 +5,7 @@
 
 An adaptation of Group Relative Policy Optimization (GRPO) for the Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) task using Vintern-3B.
 
----
 
-## TL;DR Quickstart
-
-```fish
-git clone https://github.com/T-Sunm/VINLE-GRPO.git && cd VINLE-GRPO
-git submodule update --init --recursive
-conda create -n vqa-nle-swift python=3.11 -y && conda activate vqa-nle-swift
-bash install_env.sh
-python -m src.data.dataset_loader --mode grpo --split train
-bash external/ms-swift/examples/train/grpo/internal/run_grpo.sh configs/grpo/vinle_full.yaml
-```
 
 ---
 
@@ -52,7 +41,8 @@ VINLE-GRPO/
 ├── external/            # Submodules (ms-swift framework and smile-metric)
 ├── notebooks/           # Exploratory and experimental Jupyter notebooks
 ├── scripts/             # Useful wrapper scripts for inference, data, eval, and setup (see scripts/README.md)
-│   └── eval_grpo.sh     # Main evaluation entrypoint
+│   └── eval/            # Evaluation execution scripts
+│       └── eval_grpo.sh # Main evaluation entrypoint
 ├── src/                 # Main research source code
 │   ├── data/            # Dataset prep script: dataset_loader.py
 │   ├── evaluation/      # Eval scripts (SMILE, accuracy)
@@ -65,9 +55,11 @@ VINLE-GRPO/
 
 ---
 
-## Installation
+## Quick Start
 
-The repository relies on `conda` and `pip`, configured for **Python 3.11** and **CUDA 12.4**.
+### 1. Installation
+
+The repository relies on `conda` and `pip`. To prevent dependency conflicts between the LLM training framework and evaluation metrics, we separate them into two distinct environments:
 
 ```fish
 # Clone repo & submodules
@@ -75,21 +67,28 @@ git clone https://github.com/T-Sunm/VINLE-GRPO.git
 cd VINLE-GRPO
 git submodule update --init --recursive
 
-# Create and activate conda environment
+# =================================================================
+# Environment 1: Training, Inference & SMILE Metrics
+# =================================================================
 conda create -n vqa-nle-swift python=3.11 -y
 conda activate vqa-nle-swift
-
-# Install dependencies (PyTorch 2.6.0, FlashAttention 2.7.4, ms-swift)
 bash install_env.sh
 
 # Configure Weights & Biases for logging
 set -x WANDB_ENTITY <team-name>
 set -x WANDB_PROJECT vinle_grpo
+
+# =================================================================
+# Environment 2: General Evaluation (BERTScore, Accuracy, BLEU, etc.)
+# =================================================================
+conda create -n vqa-nle-eval python=3.11 -y
+conda activate vqa-nle-eval
+bash install_env_eval.sh
 ```
 
 ---
 
-## Data
+### 2. Data Preparation
 
 - **Dataset:** [ViVQA-X](https://huggingface.co/datasets/VLAI-AIVN/ViVQA-X) (Vietnamese Visual Question Answering with Explanations).
 - **Download:** You can automatically download the raw JSON dataset using the provided setup script:
@@ -126,7 +125,7 @@ python -m src.data.dataset_loader --mode grpo --split train
 
 ---
 
-## Training
+### 3. Training & LoRA Merging
 
 Training is executed via the `ms-swift` submodule framework driven by YAML configuration files.
 
@@ -150,12 +149,15 @@ bash external/ms-swift/examples/train/grpo/internal/merge_lora.sh outputs/traini
 
 ---
 
-## Evaluation/Inference
+### 4. Evaluation & Inference
 
-### Inference
+#### Inference
 Use our pre-configured wrapper script to quickly generate outputs. Predictions are automatically versioned and saved to `outputs/inference/grpo/`.
 
 ```fish
+# Ensure the primary environment is active
+conda activate vqa-nle-swift
+
 # Set your model path dynamically
 set -x GRPO_MODEL_PATH outputs/training/grpo/vinle_full/<timestamp>/checkpoint-4000-merged
 
@@ -163,12 +165,17 @@ set -x GRPO_MODEL_PATH outputs/training/grpo/vinle_full/<timestamp>/checkpoint-4
 bash scripts/inference/run_grpo.sh 10
 ```
 
-### Evaluation
-The repository computes Accuracy and SMILE metrics automatically, safeguarding against CUDA asserts via automated text sanitization.
+#### Evaluation
+The repository computes Accuracy and SMILE metrics automatically, safeguarding against CUDA asserts via automated text sanitization. Ensure you activate the **corresponding environment** for your target metric.
 
 ```fish
-# Quick eval of all GRPO outputs using our shortcut script
-bash scripts/eval_grpo.sh
+# 1. Evaluate General NLG Metrics (Accuracy, BERTScore, BLEU) - requires Eval env
+conda activate vqa-nle-eval
+bash scripts/eval/eval_grpo.sh
+
+# 2. Evaluate SMILE Metric (Synthetic Answer Generation via LLM) - requires Swift env
+conda activate vqa-nle-swift
+bash scripts/eval/eval_smile_grpo.sh
 ```
 
 > **For deep-dive manual executions (running raw Python commands), custom parameters, evaluating ablation models (OTA, OEA), or other helper scripts, see the [Scripts Toolkit README](scripts/README.md).**
