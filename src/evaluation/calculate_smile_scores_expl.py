@@ -61,7 +61,8 @@ def evaluate_smile(json_path: str, device: str = "cuda") -> Dict:
     for item in data:
         all_questions.append(item.get("question", ""))
         all_gt_answers.append(item.get("answer", ""))
-        all_pred_answers.append(item.get("predict", ""))
+        expl = item.get("pred_explanation", "").strip() or item.get("thinking", "").strip() or item.get("predict", "")
+        all_pred_answers.append(expl)
         
         ans_type = item.get("answer_type", "other")
         if ans_type not in by_type:
@@ -74,7 +75,7 @@ def evaluate_smile(json_path: str, device: str = "cuda") -> Dict:
         
         by_type[ans_type]["questions"].append(item.get("question", ""))
         by_type[ans_type]["gt_answers"].append(item.get("answer", ""))
-        by_type[ans_type]["pred_answers"].append(item.get("predict", ""))
+        by_type[ans_type]["pred_answers"].append(expl)
     
     # Initialize results
     results = {

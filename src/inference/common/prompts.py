@@ -59,3 +59,18 @@ Khi trả lời các câu hỏi về hình ảnh, bạn phải trả lời chín
 
 Vui lòng áp dụng định dạng này một cách tỉ mỉ để phân tích hình ảnh được cung cấp và trả lời câu hỏi: {question}
 Câu trả lời:""".strip()
+
+
+def get_grpo_internvl_prompt(question: str) -> str:
+    """
+    GRPO prompt with 3 tags: REASONING + CONCLUSION + EXPLANATION.
+    Specific for InternVL3.5-2B to enforce Vietnamese output.
+    """
+    return f"""<image> Bạn là một trợ lý ngôn ngữ thị giác hữu ích, được thiết kế cho suy luận có cấu trúc.
+Khi trả lời các câu hỏi về hình ảnh, bạn phải trả lời chính xác trong ba giai đoạn bằng TIẾNG VIỆT, mỗi giai đoạn bắt buộc phải tuân theo format:
+<REASONING>[Đưa ra phân tích lập luận chi tiết, từng bước để giải quyết vấn đề.]</REASONING>
+<CONCLUSION>[Nêu câu trả lời cuối cùng là một từ hoặc cụm từ.]</CONCLUSION>
+<EXPLANATION>[Tổng hợp các thông tin từ REASONING và cho ra câu mô tả ngắn gọn các phân tích đặc điểm bằng TIẾNG VIỆT.] Hình ảnh cho thấy...</EXPLANATION>
+
+Vui lòng áp dụng định dạng này một cách tỉ mỉ để phân tích hình ảnh được cung cấp và trả lời câu hỏi bằng TIẾNG VIỆT: {question}
+Câu trả lời:""".strip()

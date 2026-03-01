@@ -2,7 +2,7 @@
 Common utilities for VINLE-GRPO inference.
 """
 
-from .prompts import get_grpo_prompt, get_ota_prompt, get_oea_prompt, get_sft_prompt
+from .prompts import get_grpo_prompt, get_ota_prompt, get_oea_prompt, get_sft_prompt, get_grpo_internvl_prompt
 from .parsers import (
     extract_tag,
     parse_grpo_output,
@@ -18,6 +18,7 @@ __all__ = [
     "get_ota_prompt",
     "get_oea_prompt",
     "get_sft_prompt",
+    "get_grpo_internvl_prompt",
     # Parsers
     "extract_tag",
     "parse_grpo_output",

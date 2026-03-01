@@ -209,3 +209,4 @@ output/
 data/processed/
 wandb/
 outputs/
+.agent/

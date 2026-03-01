@@ -62,10 +62,8 @@ def check_accuracy(pred_ans: str, gt_ans: str, raw_pred: str, raw_gt: str) -> bo
         return True
     if gt_ans in NO_SET and not c_pred_tokens.isdisjoint(NO_SET):
         return True
-    
-    # Strategy 3: Unsorted substring matching
-    gt_unsorted = normalize_unsorted(raw_gt)
-    return gt_unsorted and gt_unsorted in c_pred_nopunct
+        
+    return False
 
 
 # ============================================================================

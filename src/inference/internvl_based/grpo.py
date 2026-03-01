@@ -11,7 +11,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from ..other_models.internvl import InternVLModel
-from ..common import get_grpo_prompt, parse_grpo_output, process_inference_sample
+from ..common import get_grpo_prompt, get_grpo_internvl_prompt, parse_grpo_output, process_inference_sample
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -19,6 +19,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def infer(model: InternVLModel, question: str, image_path: str) -> dict:
     """Run full GRPO inference."""
     pixel_values = model._load_image(image_path).to(torch.bfloat16).to(device)
+    
+    # Giữ lại biến prompt này phòng khi cần dùng tới sau này
+    # if "internvl" in model.model_path.lower() or "internvl3_5" in model.model_path.lower():
+    #     prompt = get_grpo_internvl_prompt(question)
+    # else:
     prompt = get_grpo_prompt(question)
     
     with torch.no_grad():
