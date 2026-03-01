@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Enhancing Vietnamese VQA-NLE via Learning to Explain with GRPO"
+authors:
+  - family-names: "Tran"
+    given-names: "Quang-Minh"
+  - family-names: "To"
+    given-names: "Phat-Dat"
+year: 2026
+url: "https://github.com/T-Sunm/VINLE-GRPO"
+preferred-citation:
+  type: conference-paper
+  title: "Enhancing Vietnamese VQA-NLE via Learning to Explain with GRPO"
+  authors:
+    - family-names: "Tran"
+      given-names: "Quang-Minh"
+    - family-names: "To"
+      given-names: "Phat-Dat"
+  collection-title: "Proceedings of ICISN 2026"
+  year: 2026
