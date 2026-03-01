@@ -3,7 +3,7 @@
 [![Paper](https://img.shields.io/badge/Paper-ICISN2026-blue)](./docs/paper/ICISN2026_GRPO_VQA-NLE.pdf)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An adaptation of Group Relative Policy Optimization (GRPO) for the Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) task using Vintern-3B.
+An adaptation of Group Relative Policy Optimization (GRPO) for the Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) task .
 
 
 
