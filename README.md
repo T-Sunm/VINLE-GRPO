@@ -202,7 +202,7 @@ If you find this repository useful, please consider citing the paper:
 ```bibtex
 @inproceedings{vinle-grpo-2026,
   title={Enhancing Vietnamese VQA-NLE via Learning to Explain with GRPO},
-  author={Tran, Quang-Minh and To, Phat-Dat},
+  author={Quang-Minh Tran and Phat-Dat To and Huu-Phuoc Le and Duc-Manh Nguyen and Truong-Binh Duong},
   booktitle={Proceedings of ICISN 2026},
   year={2026}
 }

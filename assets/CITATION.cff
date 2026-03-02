@@ -6,6 +6,12 @@ authors:
     given-names: "Quang-Minh"
   - family-names: "To"
     given-names: "Phat-Dat"
+  - family-names: "Le"
+    given-names: "Huu-Phuoc"
+  - family-names: "Nguyen"
+    given-names: "Duc-Manh"
+  - family-names: "Duong"
+    given-names: "Truong-Binh"
 year: 2026
 url: "https://github.com/T-Sunm/VINLE-GRPO"
 preferred-citation:
@@ -16,5 +22,11 @@ preferred-citation:
       given-names: "Quang-Minh"
     - family-names: "To"
       given-names: "Phat-Dat"
+    - family-names: "Le"
+      given-names: "Huu-Phuoc"
+    - family-names: "Nguyen"
+      given-names: "Duc-Manh"
+    - family-names: "Duong"
+      given-names: "Truong-Binh"
   collection-title: "Proceedings of ICISN 2026"
   year: 2026
