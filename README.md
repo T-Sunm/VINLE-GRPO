@@ -195,6 +195,17 @@ bash scripts/eval/eval_smile_grpo.sh
 
 ---
 
+## Web UI Demo
+
+Check out our interactive web interface for comparing the GRPO and baseline models side-by-side:
+👉 [T-Sunm/vinle-grpo-demo-ui](https://github.com/T-Sunm/vinle-grpo-demo-ui)
+
+<p align="center">
+  <img src="assets/ui_results.png" width="100%" alt="Web UI Demo Results">
+</p>
+
+---
+
 ## Citation
 
 If you find this repository useful, please consider citing the paper:
